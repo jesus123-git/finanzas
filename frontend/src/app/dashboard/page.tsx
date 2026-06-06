@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth.context';
 import { useDashboard } from '@/hooks/useDashboard';
 import Button from '@/components/ui/Button';
@@ -22,13 +22,17 @@ export default function DashboardPage() {
   } = useDashboard();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [greeting, setGreeting] = useState('');
 
-  // Saludo dinámico según la hora local
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? 'Buenos días' :
-    hour < 18 ? 'Buenas tardes' :
-                'Buenas noches';
+  // Saludo dinámico: calculado solo en el cliente para evitar hydration mismatch
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(
+      hour < 12 ? 'Buenos días' :
+      hour < 18 ? 'Buenas tardes' :
+                  'Buenas noches',
+    );
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -69,7 +73,10 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">
-              {greeting}, {user?.name?.split(' ')[0] ?? 'usuario'} 👋
+              {greeting
+                ? `${greeting}, ${user?.name?.split(' ')[0] ?? 'usuario'} 👋`
+                : <span className="invisible">Cargando…</span>
+              }
             </h1>
             <p className="text-slate-400 text-sm mt-0.5">
               Aquí está el resumen de tus finanzas
