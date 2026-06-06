@@ -2,7 +2,7 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # ─── Stage 2: desarrollo (next dev con hot-reload) ───────────────────────────
 FROM base AS development
