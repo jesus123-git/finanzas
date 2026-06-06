@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { TransactionType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { FilterTransactionsDto } from './dto/filter-transactions.dto';
@@ -25,6 +25,9 @@ function balanceDeltaForAccount(
       return -amount;                        // resta siempre
     case TransactionType.TRANSFER:
       return isOrigin ? -amount : +amount;   // resta en origen, suma en destino
+    default:
+      // TypeScript exhaustiveness check: nunca debería llegar aquí
+      throw new Error(`Tipo de transacción no reconocido: ${type as string}`);
   }
 }
 
@@ -104,7 +107,7 @@ export class TransactionsService {
     // 3. Ejecutar TODO dentro de una transacción atómica de Prisma.
     //    Si cualquier operación falla, Prisma hace ROLLBACK automático.
     //    Ni la transacción ni los updates de balance quedan a medias.
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 3a. Crear el registro de transacción
       const transaction = await tx.transaction.create({
         data: {
@@ -207,8 +210,9 @@ export class TransactionsService {
     ]);
 
     // Extraemos los totales del resultado de groupBy
-    const totalIncome = aggregates.find((a) => a.type === TransactionType.INCOME)?._sum.amount ?? 0;
-    const totalExpense = aggregates.find((a) => a.type === TransactionType.EXPENSE)?._sum.amount ?? 0;
+    type AggRow = (typeof aggregates)[number];
+    const totalIncome = aggregates.find((a: AggRow) => a.type === TransactionType.INCOME)?._sum.amount ?? 0;
+    const totalExpense = aggregates.find((a: AggRow) => a.type === TransactionType.EXPENSE)?._sum.amount ?? 0;
 
     return {
       data,

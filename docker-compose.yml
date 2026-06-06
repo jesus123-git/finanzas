@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Finanzas – Docker Compose
+#
+# Servicios incluidos:
+#   postgres  → base de datos (siempre en Docker)
+#   backend   → NestJS API  (en Docker; para dev nativo usa "npm run start:dev")
+#   frontend  → Next.js     (en Docker; para dev nativo usa "npm run dev")
+#
+# Uso rápido (todo en Docker):
+#   docker compose up -d
+#
+# Uso híbrido recomendado para desarrollo local:
+#   docker compose up -d postgres      ← solo la DB
+#   cd backend  &&  npm run start:dev  ← backend nativo (hot-reload real)
+#   cd frontend &&  npm run dev        ← frontend nativo (hot-reload real)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Base de datos ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: finanzas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: finanzas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d finanzas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend NestJS ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      target: development
+    container_name: finanzas_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/finanzas
+      PORT: 3001
+      NODE_ENV: development
+      FRONTEND_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_cambia_en_produccion_32chars}
+      JWT_EXPIRES_IN: 7d
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+
+  # ── Frontend Next.js ───────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: finanzas_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      INTERNAL_API_URL: http://backend:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+
+volumes:
+  postgres_data:

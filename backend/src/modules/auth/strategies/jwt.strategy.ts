@@ -22,7 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       // Si el token expiró, rechaza la petición automáticamente
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      // El operador ! asegura a TS que JWT_SECRET siempre existe en runtime.
+      // Si no, NestJS lanzará un error al arrancar antes de aceptar peticiones.
+      secretOrKey: configService.get<string>('JWT_SECRET')!,
     });
   }
 

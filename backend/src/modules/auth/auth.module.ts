@@ -18,10 +18,11 @@ import { CategoriesModule } from '../categories/categories.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d'),
-        },
+        secret: config.get<string>('JWT_SECRET')!,
+        // @nestjs/jwt usa StringValue (branded type de ms) en lugar de string plano.
+        // El cast a `any` en signOptions evita el error sin perder seguridad en runtime.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '7d') } as any,
       }),
     }),
   ],
