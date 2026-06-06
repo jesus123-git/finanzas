@@ -8,7 +8,7 @@ import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { AccountsList } from '@/components/dashboard/AccountsList';
 import { TransactionsList } from '@/components/dashboard/TransactionsList';
 import { NewTransactionModal } from '@/components/transactions/NewTransactionModal';
-import { NequiSimulatorPanel } from '@/components/dashboard/NequiSimulatorPanel';
+import { BankSimulatorPanel } from '@/components/dashboard/BankSimulatorPanel';
 import {
   SkeletonCard,
   SkeletonRow,
@@ -23,16 +23,17 @@ export default function DashboardPage() {
   } = useDashboard();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [greeting, setGreeting] = useState('');
 
-  // Saludo dinámico: calculado solo en el cliente para evitar hydration mismatch
+  // Estado inicial vacío → servidor y cliente renderizan lo mismo (sin mismatch).
+  // useEffect corre SOLO en el browser después de la hidratación.
+  // Los rangos de hora siguen el estándar colombiano: madrugada → noches.
+  const [greeting, setGreeting] = useState("");
+
   useEffect(() => {
     const hour = new Date().getHours();
-    setGreeting(
-      hour < 12 ? 'Buenos días' :
-      hour < 18 ? 'Buenas tardes' :
-                  'Buenas noches',
-    );
+    if (hour >= 6 && hour < 12)       setGreeting("Buenos días");
+    else if (hour >= 12 && hour < 18) setGreeting("Buenas tardes");
+    else                               setGreeting("Buenas noches");
   }, []);
 
   return (
@@ -73,11 +74,12 @@ export default function DashboardPage() {
         {/* Saludo */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">
+            <h1 className="text-2xl font-bold text-slate-800 leading-tight">
               {greeting ? (
                 <>{greeting}, {user?.name?.split(' ')[0] ?? 'usuario'} 👋</>
               ) : (
-                <span className="invisible" aria-hidden>·</span>
+                /* Skeleton de igual alto que el texto — evita CLS */
+                <span className="inline-block h-8 w-56 rounded-lg bg-slate-200 animate-pulse align-middle" aria-hidden />
               )}
             </h1>
             <p className="text-slate-400 text-sm mt-0.5">
@@ -187,9 +189,9 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        {/* ─── Simulador Nequi (solo visible en desarrollo) ─────────────── */}
+        {/* ─── Simulador Open Banking (solo en desarrollo) ──────────────── */}
         {process.env.NODE_ENV === 'development' && data && (
-          <NequiSimulatorPanel accounts={data.accounts} onSuccess={refetch} />
+          <BankSimulatorPanel accounts={data.accounts} onSuccess={refetch} />
         )}
 
         {/* ─── Footer de sesión (debug, solo en desarrollo) ──────────────── */}

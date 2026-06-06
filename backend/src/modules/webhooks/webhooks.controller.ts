@@ -15,36 +15,50 @@ import {
 } from '@nestjs/swagger';
 import { WebhooksService } from './webhooks.service';
 import { NequiWebhookPayloadDto } from './dto/nequi-webhook-payload.dto';
-import { NequiAuthGuard } from './guards/nequi-auth.guard';
+import { BancolombiaWebhookPayloadDto } from './dto/bancolombia-webhook-payload.dto';
+import { WebhookAuthGuard } from './guards/webhook-auth.guard';
 
-@ApiTags('Webhooks')
+// El guard se aplica a nivel de controlador → ambos endpoints lo heredan.
+// Ninguno requiere JWT de sesión — simulan llamadas entrantes de las entidades.
+@ApiTags('Webhooks — Open Banking')
 @Controller('webhooks')
+@UseGuards(WebhookAuthGuard)
+@ApiHeader({
+  name: 'X-Webhook-Auth',
+  description: 'API Key secreta (WEBHOOK_SECRET en el .env)',
+  required: true,
+})
+@ApiUnauthorizedResponse({ description: 'X-Webhook-Auth inválido o ausente' })
 export class WebhooksController {
   constructor(private readonly webhooks: WebhooksService) {}
 
-  /**
-   * Endpoint público para el webhook de Nequi.
-   * NO requiere JWT de sesión — simula una llamada entrante de Nequi.
-   * Se protege con el header X-Nequi-Auth (API Key compartido).
-   */
+  // ── Nequi ──────────────────────────────────────────────────────────────────
+
   @Post('nequi')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(NequiAuthGuard)
   @ApiOperation({
     summary: 'Webhook Nequi',
     description:
-      'Registra automáticamente una transacción en la cuenta Nequi ' +
-      'identificada por el número de teléfono. ' +
-      'Requiere el header X-Nequi-Auth con la API Key secreta.',
-  })
-  @ApiHeader({
-    name: 'X-Nequi-Auth',
-    description: 'API Key secreta (NEQUI_WEBHOOK_SECRET en el .env)',
-    required: true,
+      'Registra una transacción en la cuenta Nequi identificada por el número ' +
+      'de teléfono (10 dígitos). Actualiza el balance de forma atómica.',
   })
   @ApiOkResponse({ description: 'Transacción registrada y balance actualizado' })
-  @ApiUnauthorizedResponse({ description: 'X-Nequi-Auth inválido o ausente' })
   handleNequi(@Body() payload: NequiWebhookPayloadDto) {
     return this.webhooks.handleNequi(payload);
+  }
+
+  // ── Bancolombia ────────────────────────────────────────────────────────────
+
+  @Post('bancolombia')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Webhook Bancolombia',
+    description:
+      'Registra un abono o débito en la cuenta Bancolombia identificada por el ' +
+      'número de cuenta (10-18 dígitos). Actualiza el balance de forma atómica.',
+  })
+  @ApiOkResponse({ description: 'Transacción registrada y balance actualizado' })
+  handleBancolombia(@Body() payload: BancolombiaWebhookPayloadDto) {
+    return this.webhooks.handleBancolombia(payload);
   }
 }
