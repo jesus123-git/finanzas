@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', sans-serif;
+}
+
+/* Scroll suave en toda la app */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Transición de página */
+body {
+  transition: background-color 0.2s ease;
+}
