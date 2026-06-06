@@ -27,6 +27,7 @@ import {
   removeToken,
   setToken,
 } from '@/lib/api';
+import { setSessionCookie, removeSessionCookie } from '@/lib/cookies';
 import type {
   AuthContextValue,
   AuthResponse,
@@ -70,17 +71,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Login ─────────────────────────────────────────────────────────────────
 
-  // ── Helpers de cookie espejo ─────────────────────────────────────────────
-  // El middleware Edge no puede leer localStorage, solo cookies.
-  // Mantenemos una cookie SameSite=Lax sincronizada con el token
-  // para que el middleware pueda hacer redirects server-side.
-  const setSessionCookie = (value: string) => {
-    document.cookie = `finanzas_session=${value}; path=/; SameSite=Lax; max-age=604800`;
-  };
-  const clearSessionCookie = () => {
-    document.cookie = 'finanzas_session=; path=/; max-age=0';
-  };
-
   const login = useCallback(async (payload: LoginPayload) => {
     const data = await apiPost<AuthResponse>('/auth/login', payload, { public: true });
     setToken(data.accessToken);
@@ -103,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     removeToken();
-    clearSessionCookie();
+    removeSessionCookie();
     setUser(null);
     router.push('/login');
   }, [router]);
