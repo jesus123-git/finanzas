@@ -1,5 +1,10 @@
 # ─── Stage 1: dependencias base ──────────────────────────────────────────────
 FROM node:20-alpine AS base
+
+# libc6-compat → compatibilidad de glibc que necesitan los binarios de Prisma
+# openssl     → el query engine de Prisma se enlaza dinámicamente con libssl
+RUN apk add --no-cache libc6-compat openssl
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -17,6 +22,7 @@ RUN npm run build
 
 # ─── Stage 4: producción (imagen mínima, sin devDependencies) ────────────────
 FROM node:20-alpine AS production
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
