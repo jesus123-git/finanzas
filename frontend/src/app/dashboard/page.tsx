@@ -73,10 +73,11 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">
-              {greeting
-                ? `${greeting}, ${user?.name?.split(' ')[0] ?? 'usuario'} 👋`
-                : <span className="invisible">Cargando…</span>
-              }
+              {greeting ? (
+                <>{greeting}, {user?.name?.split(' ')[0] ?? 'usuario'} 👋</>
+              ) : (
+                <span className="invisible" aria-hidden>·</span>
+              )}
             </h1>
             <p className="text-slate-400 text-sm mt-0.5">
               Aquí está el resumen de tus finanzas
