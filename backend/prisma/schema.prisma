@@ -1,0 +1,24 @@
+// Prisma Schema — punto de verdad del modelo de datos.
+// Cada vez que lo modifiques, ejecuta: npx prisma migrate dev --name <descripcion>
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Modelos iniciales (se ampliarán por etapas) ─────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
