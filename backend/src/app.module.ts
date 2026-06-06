@@ -6,6 +6,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -14,8 +15,9 @@ import { CategoriesModule } from './modules/categories/categories.module';
     AuthModule,
     BankAccountsModule,
     CategoriesModule,
+    TransactionsModule,
     // Próximos módulos:
-    // TransactionsModule, SavingsGoalsModule, InvestmentsModule
+    // SavingsGoalsModule, InvestmentsModule
   ],
   controllers: [AppController],
   providers: [AppService],
