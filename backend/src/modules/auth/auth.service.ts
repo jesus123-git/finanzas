@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CategoriesService } from '../categories/categories.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
@@ -20,6 +21,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   // ─── Registro ─────────────────────────────────────────────────────────────
@@ -48,7 +50,13 @@ export class AuthService {
       select: { id: true, email: true, name: true },
     });
 
-    // 4. Emitir token inmediatamente (el usuario queda logueado al registrarse)
+    // 4. Crear las categorías por defecto en background.
+    //    No usamos await para no bloquear la respuesta al cliente:
+    //    si el seed fallara (situación muy improbable), el usuario
+    //    ya fue creado correctamente y puede crear sus propias categorías.
+    void this.categoriesService.seedDefaults(user.id);
+
+    // 5. Emitir token inmediatamente (el usuario queda logueado al registrarse)
     return this.buildTokenResponse(user);
   }
 

@@ -5,10 +5,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { CategoriesModule } from '../categories/categories.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    CategoriesModule,
 
     // JwtModule.registerAsync lee el secreto desde ConfigService
     // en lugar de hardcodearlo — imprescindible para producción.
