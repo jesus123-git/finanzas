@@ -41,16 +41,13 @@ export interface Customer {
 
 export interface Transaction {
   id: string;
-  accountId: string;
   businessId?: string;
   type: 'INCOME' | 'EXPENSE' | 'TRANSFER';
-  owner: 'PERSONAL' | 'BUSINESS';
   amount: number;
-  description?: string;
+  description: string;
   notes?: string;
   date: string;
-  isRecurring: boolean;
-  category?: { id: string; name: string; icon?: string };
+  categoryLabel?: string;
   createdAt: string;
 }
 

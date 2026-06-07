@@ -1,12 +1,10 @@
 import {
-  Controller, Get, Post, Patch, Delete,
+  Controller, Get, Post, Delete,
   Body, Param, Query, UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { FilterTransactionDto } from './dto/filter-transaction.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -30,55 +28,23 @@ export class TransactionsController {
 
   // GET /api/v1/businesses/:businessId/transactions
   @Get()
-  @ApiOperation({ summary: 'Listar transacciones con filtros y resumen' })
+  @ApiOperation({ summary: 'Listar transacciones (filtro por type: INCOME | EXPENSE)' })
   findAll(
     @CurrentUser() user: { id: string },
     @Param('businessId') businessId: string,
-    @Query() filters: FilterTransactionDto,
+    @Query('type') type?: string,
   ) {
-    return this.transactionsService.findAll(user.id, businessId, filters);
+    return this.transactionsService.findAll(user.id, businessId, type);
   }
 
   // GET /api/v1/businesses/:businessId/transactions/summary
   @Get('summary')
-  @ApiOperation({ summary: 'Resumen mensual de ingresos y gastos por categoría' })
-  @ApiQuery({ name: 'year', example: 2026 })
-  @ApiQuery({ name: 'month', example: 6 })
-  getMonthlySummary(
+  @ApiOperation({ summary: 'Resumen del mes actual: ingresos, gastos y utilidad' })
+  getSummary(
     @CurrentUser() user: { id: string },
     @Param('businessId') businessId: string,
-    @Query('year') year: string,
-    @Query('month') month: string,
   ) {
-    return this.transactionsService.getMonthlySummary(
-      user.id,
-      businessId,
-      parseInt(year),
-      parseInt(month),
-    );
-  }
-
-  // GET /api/v1/businesses/:businessId/transactions/:id
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener una transacción por ID' })
-  findOne(
-    @CurrentUser() user: { id: string },
-    @Param('businessId') businessId: string,
-    @Param('id') id: string,
-  ) {
-    return this.transactionsService.findOne(user.id, businessId, id);
-  }
-
-  // PATCH /api/v1/businesses/:businessId/transactions/:id
-  @Patch(':id')
-  @ApiOperation({ summary: 'Editar una transacción' })
-  update(
-    @CurrentUser() user: { id: string },
-    @Param('businessId') businessId: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateTransactionDto,
-  ) {
-    return this.transactionsService.update(user.id, businessId, id, dto);
+    return this.transactionsService.getSummary(user.id, businessId);
   }
 
   // DELETE /api/v1/businesses/:businessId/transactions/:id

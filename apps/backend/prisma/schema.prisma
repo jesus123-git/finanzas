@@ -127,13 +127,14 @@ model Category {
 
 model Transaction {
   id            String           @id @default(uuid())
-  accountId     String
+  accountId     String?
   categoryId    String?
   businessId    String?          // Si es una transacción empresarial
   type          TransactionType
   owner         TransactionOwner @default(PERSONAL)
   amount        Decimal          @db.Decimal(15, 2)
   description   String?
+  categoryLabel String?          // Categoría como texto libre (empresas)
   notes         String?
   date          DateTime
   isRecurring   Boolean          @default(false)
@@ -143,7 +144,7 @@ model Transaction {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  account       Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account       Account?         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category      Category?        @relation(fields: [categoryId], references: [id])
   business      Business?        @relation(fields: [businessId], references: [id])
 
