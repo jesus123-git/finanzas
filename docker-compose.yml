@@ -53,6 +53,7 @@ services:
       FRONTEND_URL: http://localhost:3000
       JWT_SECRET: ${JWT_SECRET:-dev_secret_cambia_en_produccion_32chars}
       JWT_EXPIRES_IN: 7d
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-nequi_bancolombia_secret_2026}
     ports:
       - "3001:3001"
     volumes:

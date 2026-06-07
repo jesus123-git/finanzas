@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth }                    from '@/context/auth.context';
 import { useAccounts }                from '@/hooks/useAccounts';
 import { useAccountTransactions }     from '@/hooks/useAccountTransactions';
+import { useWebhookPoll }             from '@/hooks/useWebhookPoll';
 import { AccountCard }                from '@/components/accounts/AccountCard';
 import { AccountMovementsPanel }      from '@/components/accounts/AccountMovementsPanel';
 import { CreateAccountModal }         from '@/components/accounts/CreateAccountModal';
@@ -61,14 +62,18 @@ export default function AccountsPage() {
     setSelectedId((prev) => (prev === account.id ? null : account.id));
   }, []);
 
-  // ── Callback del simulador: refrescar cuentas + movimientos ──────────────
-  // Se pasa como onSuccess al BankSimulatorPanel.
-  // El simulador ya espera 350 ms antes de llamarlo, tiempo suficiente para
-  // que el backend haya actualizado el balance en Postgres.
+  // ── Callback unificado de refresco (simulador + polling) ─────────────────
+  // Lo usa tanto BankSimulatorPanel.onSuccess como useWebhookPoll.
+  // Refresca cuentas (saldo actualizado) y movimientos (nueva transacción).
   const handleSimulatorSuccess = useCallback(() => {
     refetchAccounts();
     refetchTx();
   }, [refetchAccounts, refetchTx]);
+
+  // ── Polling de webhooks desde el móvil ────────────────────────────────────
+  // Detecta transacciones reales llegadas vía iOS Shortcuts / MacroDroid y
+  // actualiza el panel de movimientos y el saldo de la tarjeta al instante.
+  useWebhookPoll(handleSimulatorSuccess);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (

@@ -12,6 +12,7 @@ import { NewTransactionModal }  from '@/components/transactions/NewTransactionMo
 import { CreateAccountModal }   from '@/components/accounts/CreateAccountModal';
 import { BankSimulatorPanel }   from '@/components/dashboard/BankSimulatorPanel';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
+import { useWebhookPoll }       from '@/hooks/useWebhookPoll';
 import {
   SkeletonCard,
   SkeletonRow,
@@ -28,6 +29,11 @@ export default function DashboardPage() {
   const [modalOpen,   setModalOpen]   = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const { toasts, toast, dismissToast } = useToast();
+
+  // ── Polling de webhooks ───────────────────────────────────────────────────
+  // Detecta transacciones reales llegadas desde el móvil (iOS Shortcuts /
+  // MacroDroid) y hace refetch automático cada 5 s.
+  useWebhookPoll(refetch);
 
   // Estado inicial vacío → servidor y cliente renderizan lo mismo (sin mismatch).
   // useEffect corre SOLO en el browser después de la hidratación.
