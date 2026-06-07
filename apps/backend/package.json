@@ -1,5 +1,5 @@
 {
-  "name": "finanzas-backend",
+  "name": "@finanzas/backend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
