@@ -105,85 +105,111 @@ export class WebhooksService {
     amount?:      number;
   }> {
     const { text, devicePhone } = payload;
-    this.logger.log(`[mobile-parser] Texto recibido: "${text.slice(0, 120)}…"`);
+
+    // ── 0. Guardia de seguridad temprana ──────────────────────────────────
+    // Protege contra inputs inesperados que pasen la validación del DTO pero
+    // puedan romper las expresiones regulares o los métodos de string.
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      this.logger.warn('[mobile-parser] Campo "text" vacío o inválido — rechazando.');
+      return { ok: false, message: 'El campo "text" es obligatorio y no puede estar vacío' };
+    }
+
+    this.logger.log(
+      `[mobile-parser] Texto recibido (${text.length} chars): "${text.slice(0, 100)}${text.length > 100 ? '…' : ''}"`,
+    );
 
     // ── 1. Parsear el texto ────────────────────────────────────────────────
-    const parsed = this.parseText(text);
+    // Envuelto en try-catch: si una regex lanza con un encoding inesperado
+    // (p.ej. secuencias de bytes inválidas desde ciertos dispositivos Android),
+    // devolvemos 200 con ok:false en lugar de romper la conexión HTTP.
+    let parsed: ParsedSMS;
+    try {
+      parsed = this.parseText(text);
+    } catch (parseErr) {
+      this.logger.error('[mobile-parser] Excepción en parseText — texto posiblemente malformado:', parseErr);
+      return { ok: false, message: 'No se pudo analizar el texto del SMS (encoding o formato inesperado)' };
+    }
 
     if (!parsed.provider) {
-      this.logger.warn(`[mobile-parser] Proveedor no reconocido — ignorando.`);
-      return { ok: false, message: 'Proveedor no reconocido (debe contener "Bancolombia" o "Nequi")' };
+      this.logger.warn('[mobile-parser] Proveedor no reconocido — el texto no menciona "Bancolombia" ni "Nequi".');
+      return { ok: false, message: 'Proveedor no reconocido (el texto debe contener "Bancolombia" o "Nequi")' };
     }
     if (!parsed.type) {
-      this.logger.warn(`[mobile-parser] Tipo de movimiento no reconocido — ignorando.`);
-      return { ok: false, message: 'Tipo de movimiento no reconocido en el texto' };
+      this.logger.warn(`[mobile-parser] Tipo de movimiento no reconocido en texto de ${parsed.provider}.`);
+      return { ok: false, message: `Tipo de movimiento no reconocido en el texto de ${parsed.provider}` };
     }
     if (!parsed.amount || parsed.amount <= 0) {
-      this.logger.warn(`[mobile-parser] Monto no encontrado en el texto — ignorando.`);
-      return { ok: false, message: 'No se pudo extraer el monto del texto' };
+      this.logger.warn(`[mobile-parser] Monto no encontrado en texto de ${parsed.provider}.`);
+      return { ok: false, message: 'No se pudo extraer el monto del texto (¿falta el símbolo "$"?)' };
     }
 
     // ── 2. Buscar la cuenta en la BD ──────────────────────────────────────
+    // try-catch independiente: aísla errores de Prisma (conexión caída,
+    // timeout, esquema desincronizado) del flujo normal de negocio.
     let account: ResolvedAccount | null = null;
-
-    if (parsed.provider === 'NEQUI') {
-      // Para Nequi: el identificador es el número de teléfono del dispositivo.
-      // El usuario registra su cuenta Nequi con externalAccountId = número celular.
-      account = await this.prisma.bankAccount.findFirst({
-        where:  { provider: 'NEQUI', externalAccountId: devicePhone },
-        select: { id: true, userId: true, name: true },
-      });
-      if (!account) {
-        this.logger.warn(
-          `[mobile-parser] Cuenta NEQUI no encontrada para devicePhone=${devicePhone}`,
-        );
-        return {
-          ok:      false,
-          message: `Cuenta NEQUI con número ${devicePhone} no encontrada — créala con provider=NEQUI`,
-        };
+    try {
+      if (parsed.provider === 'NEQUI') {
+        // Para Nequi: el identificador es el número de teléfono del dispositivo.
+        account = await this.prisma.bankAccount.findFirst({
+          where:  { provider: 'NEQUI', externalAccountId: devicePhone },
+          select: { id: true, userId: true, name: true },
+        });
+        if (!account) {
+          this.logger.warn(`[mobile-parser] Cuenta NEQUI no encontrada para devicePhone=${devicePhone}`);
+          return {
+            ok:      false,
+            message: `Cuenta NEQUI con número ${devicePhone} no encontrada — créala con provider=NEQUI`,
+          };
+        }
+      } else {
+        // Para Bancolombia: identificador = últimos 4 dígitos de la cuenta.
+        if (!parsed.accountSuffix) {
+          this.logger.warn('[mobile-parser] Bancolombia: sufijo de cuenta (*XXXX) no encontrado en el texto.');
+          return { ok: false, message: 'No se encontraron los últimos 4 dígitos de la cuenta Bancolombia en el texto' };
+        }
+        account = await this.prisma.bankAccount.findFirst({
+          where: {
+            provider:          'BANCOLOMBIA',
+            externalAccountId: { endsWith: parsed.accountSuffix },
+          },
+          select: { id: true, userId: true, name: true },
+        });
+        if (!account) {
+          this.logger.warn(`[mobile-parser] Cuenta BANCOLOMBIA *${parsed.accountSuffix} no encontrada.`);
+          return {
+            ok:      false,
+            message: `Cuenta BANCOLOMBIA *${parsed.accountSuffix} no encontrada — créala con el número de cuenta completo`,
+          };
+        }
       }
-    } else {
-      // Para Bancolombia: el identificador son los últimos 4 dígitos del número de cuenta.
-      if (!parsed.accountSuffix) {
-        this.logger.warn(`[mobile-parser] Bancolombia: sufijo de cuenta (*XXXX) no encontrado en el texto.`);
-        return { ok: false, message: 'No se encontraron los últimos 4 dígitos de la cuenta Bancolombia en el texto' };
-      }
-
-      // Prisma soporta `endsWith` de forma nativa en @prisma/client ≥ 2.x
-      account = await this.prisma.bankAccount.findFirst({
-        where: {
-          provider:          'BANCOLOMBIA',
-          externalAccountId: { endsWith: parsed.accountSuffix },
-        },
-        select: { id: true, userId: true, name: true },
-      });
-      if (!account) {
-        this.logger.warn(
-          `[mobile-parser] Cuenta BANCOLOMBIA terminada en *${parsed.accountSuffix} no encontrada.`,
-        );
-        return {
-          ok:      false,
-          message: `Cuenta BANCOLOMBIA *${parsed.accountSuffix} no encontrada — créala con el número de cuenta completo`,
-        };
-      }
+    } catch (dbLookupErr) {
+      this.logger.error('[mobile-parser] Error al consultar la cuenta en BD:', dbLookupErr);
+      return { ok: false, message: 'Error interno al consultar la base de datos — reintenta en unos segundos' };
     }
 
-    // ── 3. Upsert de categoría y creación de transacción atómica ──────────
-    const categoryName = parsed.provider === 'NEQUI' ? 'Nequi' : 'Bancolombia';
-    const category     = await this.upsertCategory(account.userId, categoryName);
+    // ── 3. Upsert de categoría y creación de transacción ──────────────────
+    // try-catch independiente: protege contra fallos de escritura en BD
+    // (p.ej. constraint violation, conexión perdida durante la transacción).
+    try {
+      const categoryName = parsed.provider === 'NEQUI' ? 'Nequi' : 'Bancolombia';
+      const category     = await this.upsertCategory(account.userId, categoryName);
 
-    // Descripción: primeros 200 chars del SMS (suficiente para identificar el movimiento)
-    const description = text.length > 200 ? `${text.slice(0, 197)}…` : text;
+      // Descripción: primeros 200 chars del SMS
+      const description = text.length > 200 ? `${text.slice(0, 197)}…` : text;
 
-    await this.transactions.createForWebhook({
-      bankAccountId: account.id,
-      categoryId:    category.id,
-      userId:        account.userId,
-      amount:        parsed.amount,
-      type:          parsed.type as Extract<TransactionType, 'INCOME' | 'EXPENSE'>,
-      description,
-      date:          new Date(),
-    });
+      await this.transactions.createForWebhook({
+        bankAccountId: account.id,
+        categoryId:    category.id,
+        userId:        account.userId,
+        amount:        parsed.amount,
+        type:          parsed.type as Extract<TransactionType, 'INCOME' | 'EXPENSE'>,
+        description,
+        date:          new Date(),
+      });
+    } catch (txErr) {
+      this.logger.error('[mobile-parser] Error al crear la transacción:', txErr);
+      return { ok: false, message: 'Error al guardar la transacción — el balance no fue modificado' };
+    }
 
     // ── 4. Marcar evento de refresco ──────────────────────────────────────
     this.emitRefreshEvent();
@@ -266,7 +292,10 @@ export class WebhooksService {
    *   - Mixto:       "1.234,00"→ 1234    "1,234.00"  → 1234
    */
   private parseAmount(raw: string): number {
+    // Guardia defensiva: si raw no es un string o está vacío, devuelve 0.
+    if (!raw || typeof raw !== 'string') return 0;
     const s        = raw.trim();
+    if (s.length === 0) return 0;
     const lastDot  = s.lastIndexOf('.');
     const lastComma = s.lastIndexOf(',');
 
