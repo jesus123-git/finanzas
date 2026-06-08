@@ -5,16 +5,14 @@ import type { ReactNode } from 'react';
 
 // ─── ThemeProvider ─────────────────────────────────────────────────────────────
 //
-// Wrapper delgado sobre next-themes.  Inyecta la clase 'dark' o la quita de
-// <html> según la preferencia del usuario, que se persiste en localStorage.
-//
-// Uso: envuelve <AuthProvider> en layout.tsx para que TODA la app tenga acceso
-// al tema sin necesidad de prop-drilling.
+// Wrapper con 'use client' sobre next-themes (requerido por Next.js App Router).
+// next-themes 0.4.x exporta su ThemeProvider como client component internamente,
+// pero Next.js requiere que el PRIMER punto de entrada sea un archivo con
+// 'use client' explícito cuando se usa en un server component (layout.tsx).
 //
 // attribute="class" → Tailwind darkMode: 'class' requiere este atributo.
 // defaultTheme="light" → arranca en modo día por defecto.
-// enableSystem={false} → no hereda la preferencia del sistema operativo;
-//   el usuario elige explícitamente desde el botón de la UI.
+// enableSystem={false} → el usuario elige explícitamente desde el botón de la UI.
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
