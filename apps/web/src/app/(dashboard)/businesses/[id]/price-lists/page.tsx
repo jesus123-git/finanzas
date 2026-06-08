@@ -53,7 +53,10 @@ export default function PriceListsPage() {
   const toggleMutation = useMutation({
     mutationFn: (enabled: boolean) =>
       api.patch(`/businesses/${businessId}/price-lists/toggle`, { enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['business', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['price-lists', businessId] });
+    },
   });
 
   const createMutation = useMutation({

@@ -4,7 +4,7 @@ import { PriceListsService } from './price-lists.service';
 import { CreatePriceListDto, PriceListItemDto } from './dto/create-price-list.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { IsArray, ValidateNested } from 'class-validator';
+import { IsArray, ValidateNested, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -17,6 +17,8 @@ class UpsertItemsDto {
 }
 
 class ToggleDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
   enabled: boolean;
 }
 
