@@ -231,15 +231,17 @@ model Business {
   phone         String?
   email         String?
   taxRegime     String?   // "SIMPLE" | "ORDINARIO"
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  isActive       Boolean   @default(true)
+  usePriceLists  Boolean   @default(false) // Activa listas de precios
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions  Transaction[]
   customers     Customer[]
   invoices      Invoice[]
   products      Product[]
+  priceLists    PriceList[]
 
   @@map("businesses")
 }
@@ -258,7 +260,9 @@ model Customer {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business      Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  priceList     PriceList? @relation(fields: [priceListId], references: [id])
+  priceListId   String?
   invoices      Invoice[]
 
   @@map("customers")
@@ -326,9 +330,40 @@ model Product {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  business      Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  invoiceItems  InvoiceItem[]
+  business        Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoiceItems    InvoiceItem[]
+  priceListItems  PriceListItem[]
 
   @@index([businessId, isActive])
   @@map("products")
+}
+
+// ─── MÓDULO EMPRESA: LISTAS DE PRECIOS ───────────────────────────────────────
+
+model PriceList {
+  id          String   @id @default(uuid())
+  businessId  String
+  name        String   // "Minorista", "Mayorista", "Especial"
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items       PriceListItem[]
+  customers   Customer[]
+
+  @@map("price_lists")
+}
+
+model PriceListItem {
+  id          String   @id @default(uuid())
+  priceListId String
+  productId   String
+  price       Decimal  @db.Decimal(15, 2)
+
+  priceList   PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([priceListId, productId])
+  @@map("price_list_items")
 }

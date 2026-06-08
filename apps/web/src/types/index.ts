@@ -19,6 +19,7 @@ export interface Business {
   email?: string;
   taxRegime?: string;
   isActive: boolean;
+  usePriceLists: boolean;
   createdAt: string;
   _count?: {
     customers: number;
