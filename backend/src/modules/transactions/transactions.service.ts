@@ -9,6 +9,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { balanceDeltaForAccount } from '../../common/utils/balance.utils';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { FilterTransactionsDto } from './dto/filter-transactions.dto';
+import { BulkImportDto } from './dto/bulk-import.dto';
 
 // ─── Parámetros para creación interna (webhooks, seeds, etc.) ────────────────
 
@@ -216,6 +217,49 @@ export class TransactionsService {
       totalIncome,
       totalExpense,
     };
+  }
+
+  // ─── IMPORTACIÓN MASIVA desde Excel ─────────────────────────────────────
+
+  async bulkImport(userId: string, dto: BulkImportDto) {
+    // 1. Validar ownership de cuenta y categoría antes de escribir
+    const [account] = await Promise.all([
+      this.assertAccountOwnership(userId, dto.bankAccountId),
+      this.assertCategoryOwnership(userId, dto.categoryId),
+    ]);
+
+    // 2. Preparar registros
+    const data = dto.rows.map((row) => ({
+      amount:        row.amount,
+      description:   row.description,
+      type:          row.type,
+      date:          new Date(row.date),
+      bankAccountId: dto.bankAccountId,
+      categoryId:    dto.categoryId,
+      userId,
+    }));
+
+    // 3. Insertar todo en una transacción atómica y actualizar balance
+    const inserted = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const { count } = await tx.transaction.createMany({ data });
+
+      // Calcular el delta neto de balance para la cuenta
+      const delta = data.reduce(
+        (sum, row) => sum + balanceDeltaForAccount(row.type, row.amount, true),
+        0,
+      );
+
+      if (delta !== 0) {
+        await tx.bankAccount.update({
+          where: { id: dto.bankAccountId },
+          data:  { balance: { increment: delta } },
+        });
+      }
+
+      return count;
+    });
+
+    return { inserted, accountName: account.name };
   }
 
   // ─── RESUMEN POR CATEGORÍA (para la gráfica de dona) ────────────────────

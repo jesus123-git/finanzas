@@ -16,6 +16,7 @@ import { ComingSoonTile } from '@/components/dashboard/ComingSoonTile';
 import { CashflowCalendar } from '@/components/calendar/CashflowCalendar';
 import { CategoryDonutChart } from '@/components/charts/CategoryDonutChart';
 import { useCategoryStats } from '@/hooks/useCategoryStats';
+import { ExcelImportWizard } from '@/components/excel/ExcelImportWizard';
 import { BankSimulatorPanel } from '@/components/dashboard/BankSimulatorPanel';
 import { NewTransactionModal } from '@/components/transactions/NewTransactionModal';
 import { CreateAccountModal } from '@/components/accounts/CreateAccountModal';
@@ -61,6 +62,7 @@ export default function DashboardPage() {
 
   const [modalOpen,       setModalOpen]       = useState(false);
   const [accountOpen,     setAccountOpen]     = useState(false);
+  const [excelOpen,       setExcelOpen]       = useState(false);
   const [calendarSignal,  setCalendarSignal]  = useState(0);
   const { toasts, toast, dismissToast } = useToast();
 
@@ -323,15 +325,27 @@ export default function DashboardPage() {
             </BentoCard>
           </div>
 
-          {/* ── Fila 5: Placeholder Excel (ancho completo) ──────────────── */}
+          {/* ── Fila 5: Importar Excel ──────────────────────────────────── */}
           <div className="col-span-1 lg:col-span-12">
-            <ComingSoonTile
-              icon="📂"
-              title="Importar desde Excel"
-              description="Arrastra tu archivo .xlsx con transacciones históricas y las procesamos automáticamente en 3 pasos."
-              step="Etapa 4"
-              minHeight="min-h-[140px]"
-            />
+            <button
+              onClick={() => setExcelOpen(true)}
+              className="w-full group rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 bg-white dark:bg-slate-800 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 p-6 min-h-[100px] flex items-center justify-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 flex items-center justify-center transition-colors flex-shrink-0">
+                <span className="text-2xl" aria-hidden>📂</span>
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+                  Importar transacciones desde Excel
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  Sube un .xlsx · .xls · .csv y las procesamos en 3 pasos — hasta 1.000 filas
+                </p>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-300 dark:text-slate-600 group-hover:text-emerald-400 transition-colors ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* ── Fila 6: Simulador (solo en desarrollo) ──────────────────── */}
@@ -379,6 +393,20 @@ export default function DashboardPage() {
           refetch();
         }}
       />
+
+      {data && (
+        <ExcelImportWizard
+          open={excelOpen}
+          accounts={data.accounts}
+          onClose={() => setExcelOpen(false)}
+          onSuccess={() => {
+            setExcelOpen(false);
+            toast('Transacciones importadas correctamente 🎉', 'success');
+            refetch();
+            setCalendarSignal(s => s + 1);
+          }}
+        />
+      )}
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
