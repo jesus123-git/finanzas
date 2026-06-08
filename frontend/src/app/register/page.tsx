@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/auth.context';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface FormErrors {
   name?: string;
@@ -86,7 +87,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4 relative">
+
+      {/* Toggle de tema */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md">
 
         {/* Logo / Marca */}
@@ -94,13 +101,13 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 shadow-lg mb-4">
             <span className="text-2xl">💸</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Crea tu cuenta</h1>
-          <p className="text-slate-500 mt-1 text-sm">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Crea tu cuenta</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
             Empieza a gestionar tus finanzas gratis
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-8">
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
 
             <Input
@@ -137,7 +144,7 @@ export default function RegisterPage() {
               />
               {password.length > 0 && (
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all duration-300 ${strength.color} ${strength.width}`} />
                   </div>
                   <span className={`text-xs font-medium ${strength.color.replace('bg-', 'text-')}`}>
@@ -158,7 +165,7 @@ export default function RegisterPage() {
             />
 
             {apiError && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 {apiError}
               </div>
             )}
@@ -170,22 +177,22 @@ export default function RegisterPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
             </div>
-            <div className="relative flex justify-center text-xs text-slate-400 bg-white px-3">
-              ¿Ya tienes cuenta?
+            <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
+              <span className="bg-white dark:bg-slate-800 px-3">¿Ya tienes cuenta?</span>
             </div>
           </div>
 
           <Link
             href="/login"
-            className="block w-full text-center rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="block w-full text-center rounded-lg border border-slate-300 dark:border-slate-600 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             Iniciar sesión
           </Link>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-xs text-slate-400 dark:text-slate-600 mt-6">
           Al registrarte aceptas nuestros términos de uso y política de privacidad.
         </p>
       </div>

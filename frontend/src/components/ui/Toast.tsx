@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+import { useEffect, useState, useCallback } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -17,32 +15,30 @@ interface Props {
   onDismiss: (id: string) => void;
 }
 
-// ─── Colores por tipo ─────────────────────────────────────────────────────────
-
-const STYLES: Record<ToastType, { bar: string; bg: string; icon: string }> = {
+const STYLES: Record<ToastType, { bar: string; bg: string; text: string; icon: string }> = {
   success: {
     bar:  'bg-emerald-500',
-    bg:   'bg-white border-emerald-200',
+    bg:   'bg-white dark:bg-slate-800 border-emerald-200 dark:border-emerald-800',
+    text: 'text-slate-700 dark:text-slate-200',
     icon: '✓',
   },
   error: {
     bar:  'bg-red-500',
-    bg:   'bg-white border-red-200',
+    bg:   'bg-white dark:bg-slate-800 border-red-200 dark:border-red-800',
+    text: 'text-slate-700 dark:text-slate-200',
     icon: '✕',
   },
   info: {
     bar:  'bg-blue-500',
-    bg:   'bg-white border-blue-200',
+    bg:   'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800',
+    text: 'text-slate-700 dark:text-slate-200',
     icon: 'ℹ',
   },
 };
 
-// ─── Item individual ──────────────────────────────────────────────────────────
-
 function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => void }) {
   const s = STYLES[toast.type];
 
-  // Auto-dismiss a los 4 segundos
   useEffect(() => {
     const t = setTimeout(onDismiss, 4000);
     return () => clearTimeout(t);
@@ -56,23 +52,16 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => vo
       `}
       role="alert"
     >
-      {/* Barra de color lateral */}
       <div className={`w-1 self-stretch flex-shrink-0 ${s.bar}`} />
-
-      {/* Icono */}
       <div className={`mt-3.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 ${s.bar}`}>
         {s.icon}
       </div>
-
-      {/* Mensaje */}
-      <p className="flex-1 py-3.5 pr-2 text-sm text-slate-700 leading-snug">
+      <p className={`flex-1 py-3.5 pr-2 text-sm leading-snug ${s.text}`}>
         {toast.message}
       </p>
-
-      {/* Botón cerrar */}
       <button
         onClick={onDismiss}
-        className="mt-3 mr-3 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0 text-lg leading-none"
+        className="mt-3 mr-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex-shrink-0 text-lg leading-none"
         aria-label="Cerrar notificación"
       >
         ×
@@ -81,28 +70,16 @@ function ToastItem({ toast, onDismiss }: { toast: ToastData; onDismiss: () => vo
   );
 }
 
-// ─── Contenedor (fixed top-right) ─────────────────────────────────────────────
-
 export function ToastContainer({ toasts, onDismiss }: Props) {
   if (toasts.length === 0) return null;
-
   return (
-    <div
-      className="fixed top-5 right-5 z-[200] flex flex-col gap-2.5"
-      aria-live="polite"
-    >
+    <div className="fixed top-5 right-5 z-[200] flex flex-col gap-2.5" aria-live="polite">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onDismiss={() => onDismiss(t.id)} />
       ))}
     </div>
   );
 }
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-// Uso: const { toasts, toast, dismissToast } = useToast();
-//      toast('Cuenta creada', 'success');
-
-import { useState, useCallback } from 'react';
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastData[]>([]);

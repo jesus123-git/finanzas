@@ -2,16 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Variables de fuente ──────────────────────────────────────────────────── */
 :root {
   --font-inter: 'Inter', sans-serif;
 }
 
-/* Scroll suave en toda la app */
+/* ─── Transiciones globales de tema ───────────────────────────────────────── */
+/* Suaviza el cambio de paleta cuando el usuario alterna modo día/noche.      */
 html {
   scroll-behavior: smooth;
 }
 
-/* Transición de página */
-body {
-  transition: background-color 0.2s ease;
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
+
+/* Excluir elementos que no deben tener transición de color
+   (animaciones, transforms, etc.) */
+.animate-pulse,
+.animate-spin,
+.animate-slide-in,
+.animate-drawer-in,
+.animate-fade-up {
+  transition: none !important;
+}
+
+/* ─── Scrollbar personalizado ─────────────────────────────────────────────── */
+/* Modo claro */
+::-webkit-scrollbar               { width: 6px; height: 6px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover   { background: #94a3b8; }
+
+/* Modo oscuro */
+.dark ::-webkit-scrollbar-thumb       { background: #475569; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* ─── Selección de texto ──────────────────────────────────────────────────── */
+::selection       { background: #6ee7b7; color: #1e293b; }
+.dark ::selection { background: #065f46; color: #f1f5f9; }

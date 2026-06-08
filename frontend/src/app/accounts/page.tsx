@@ -12,6 +12,7 @@ import { CreateAccountModal }         from '@/components/accounts/CreateAccountM
 import { BankSimulatorPanel }         from '@/components/dashboard/BankSimulatorPanel';
 import { ToastContainer, useToast }   from '@/components/ui/Toast';
 import { SkeletonAccount }            from '@/components/dashboard/SkeletonCard';
+import { ThemeToggle }                from '@/components/ui/ThemeToggle';
 import Button                         from '@/components/ui/Button';
 import type { BankAccount }           from '@/types/dashboard.types';
 
@@ -77,10 +78,10 @@ export default function AccountsPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
       {/* ── Header sticky ───────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
 
           {/* Logo + breadcrumb */}
@@ -93,7 +94,7 @@ export default function AccountsPage() {
               <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-sm">
                 <span className="text-sm">💸</span>
               </div>
-              <span className="font-bold text-slate-800 text-lg group-hover:text-emerald-600 transition-colors">
+              <span className="font-bold text-slate-800 dark:text-white text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 Finanzas
               </span>
             </Link>
@@ -105,11 +106,12 @@ export default function AccountsPage() {
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button
               variant="ghost"
               onClick={() => setAccountOpen(true)}
-              className="gap-1.5 text-sm border border-slate-200"
+              className="gap-1.5 text-sm border border-slate-200 dark:border-slate-600"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -119,12 +121,12 @@ export default function AccountsPage() {
 
             {/* Avatar */}
             <div className="hidden sm:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                <span className="text-sm font-bold text-emerald-600">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                   {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
                 </span>
               </div>
-              <span className="text-sm text-slate-600 font-medium hidden md:block">
+              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium hidden md:block">
                 {user?.name ?? user?.email}
               </span>
             </div>
@@ -149,8 +151,8 @@ export default function AccountsPage() {
 
         {/* Error global */}
         {errorAccounts && (
-          <div className="rounded-xl bg-red-50 border border-red-200 px-5 py-4 flex items-center justify-between">
-            <p className="text-sm text-red-700">⚠️ {errorAccounts}</p>
+          <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-5 py-4 flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-400">⚠️ {errorAccounts}</p>
             <button
               onClick={refetchAccounts}
               className="text-xs font-semibold text-red-600 hover:text-red-800 underline"
@@ -168,7 +170,7 @@ export default function AccountsPage() {
 
             {/* Cabecera de la sección */}
             <div className="flex items-center justify-between h-7">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                 {loadingAccounts
                   ? 'Cargando…'
                   : `${accounts.length} cuenta${accounts.length !== 1 ? 's' : ''}`
@@ -200,7 +202,7 @@ export default function AccountsPage() {
 
             {/* Estado vacío */}
             {!loadingAccounts && !errorAccounts && accounts.length === 0 && (
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
+              <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 text-center">
                 <p className="text-3xl mb-2">🏦</p>
                 <p className="text-sm font-semibold text-slate-600">Sin cuentas registradas</p>
                 <p className="text-xs text-slate-400 mt-1">
@@ -233,7 +235,7 @@ export default function AccountsPage() {
               />
             ) : (
               /* Estado vacío — ninguna cuenta seleccionada */
-              <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-center p-12 min-h-[340px]">
+              <div className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex flex-col items-center justify-center text-center p-12 min-h-[340px]">
                 {loadingAccounts ? (
                   <>
                     <div className="w-12 h-12 rounded-full bg-slate-100 animate-pulse mb-4" />
@@ -242,10 +244,10 @@ export default function AccountsPage() {
                 ) : (
                   <>
                     <span className="text-5xl mb-4 select-none" aria-hidden>👈</span>
-                    <p className="text-base font-semibold text-slate-600">
+                    <p className="text-base font-semibold text-slate-600 dark:text-slate-300">
                       Selecciona una cuenta
                     </p>
-                    <p className="text-sm text-slate-400 mt-1.5 max-w-xs leading-relaxed">
+                    <p className="text-sm text-slate-400 dark:text-slate-500 mt-1.5 max-w-xs leading-relaxed">
                       Haz clic en cualquier tarjeta para ver su historial de movimientos detallado
                     </p>
                   </>
