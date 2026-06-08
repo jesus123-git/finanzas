@@ -57,6 +57,21 @@ export class CategoriesController {
     return this.categoriesService.findAll(user.id);
   }
 
+  // ─── POST /api/v1/categories/seed-defaults ───────────────────────────────
+  // Crea las 10 categorías por defecto del usuario; idempotente (skipDuplicates).
+
+  @Post('seed-defaults')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Crear las categorías por defecto para el usuario autenticado',
+    description: 'Idempotente: si ya existen, no duplica ni falla.',
+  })
+  @ApiOkResponse({ schema: { example: { message: 'Categorías por defecto creadas' } } })
+  async seedDefaults(@CurrentUser() user: { id: string }) {
+    await this.categoriesService.seedDefaults(user.id);
+    return { message: 'Categorías por defecto creadas' };
+  }
+
   // ─── DELETE /api/v1/categories/:id ───────────────────────────────────────
 
   @Delete(':id')

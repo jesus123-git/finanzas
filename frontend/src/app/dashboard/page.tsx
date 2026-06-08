@@ -7,12 +7,12 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { useWebhookPoll } from '@/hooks/useWebhookPoll';
 import Button from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { apiDelete } from '@/lib/api';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { AccountsList } from '@/components/dashboard/AccountsList';
 import { TransactionsList } from '@/components/dashboard/TransactionsList';
 import { AIAdvisorCard } from '@/components/dashboard/AIAdvisorCard';
-import { ComingSoonTile } from '@/components/dashboard/ComingSoonTile';
 import { CashflowCalendar } from '@/components/calendar/CashflowCalendar';
 import { CategoryDonutChart } from '@/components/charts/CategoryDonutChart';
 import { useCategoryStats } from '@/hooks/useCategoryStats';
@@ -79,6 +79,14 @@ export default function DashboardPage() {
     setCalendarSignal(s => s + 1);
   }, [refetch]);
   useWebhookPoll(handleRefresh);
+
+  // Eliminar transacción desde la lista del dashboard
+  const handleDeleteTx = useCallback(async (txId: string) => {
+    await apiDelete(`/transactions/${txId}`);
+    toast('Transacción eliminada', 'success');
+    refetch();
+    setCalendarSignal(s => s + 1);
+  }, [refetch, toast]);
 
   // Saludo dependiente de la hora — inicializa vacío para evitar hidratación mismatch
   const [greeting, setGreeting] = useState('');
@@ -187,12 +195,20 @@ export default function DashboardPage() {
               Aquí está el resumen de tus finanzas
             </p>
           </div>
-          <Link
-            href="/accounts"
-            className="hidden sm:flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-          >
-            Ver cuentas →
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+            <Link
+              href="/accounts"
+              className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+            >
+              Cuentas →
+            </Link>
+            <Link
+              href="/categories"
+              className="text-sm font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
+            >
+              Categorías →
+            </Link>
+          </div>
         </div>
 
         {/* Error global ───────────────────────────────────────────────────── */}
@@ -302,7 +318,7 @@ export default function DashboardPage() {
                   {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
                 </div>
               ) : data ? (
-                <TransactionsList transactions={data.recentTransactions} />
+                <TransactionsList transactions={data.recentTransactions} onDelete={handleDeleteTx} />
               ) : null}
             </BentoCard>
           </div>
