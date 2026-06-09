@@ -7,6 +7,7 @@ import { useAuth } from '@/context/auth.context';
 import { apiGet, apiPost } from '@/lib/api';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
+import { UserMenu } from '@/components/ui/UserMenu';
 import Button from '@/components/ui/Button';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 
@@ -26,7 +27,7 @@ interface Business {
 // ─── Selector de Empresa ──────────────────────────────────────────────────────
 
 export default function EmpresasPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const { toasts, toast, dismissToast } = useToast();
 
@@ -82,17 +83,9 @@ export default function EmpresasPage() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <div className="hidden sm:flex items-center gap-2 pl-1 border-l border-slate-200 dark:border-slate-700">
-              <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
-                <span className="text-sm font-bold text-violet-600 dark:text-violet-400">
-                  {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
-                </span>
-              </div>
-              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium hidden md:block">
-                {user?.name ?? user?.email}
-              </span>
+            <div className="pl-1 border-l border-slate-200 dark:border-slate-700">
+              <UserMenu />
             </div>
-            <Button variant="ghost" onClick={logout} className="text-sm px-3 py-2">Salir</Button>
           </div>
         </div>
       </header>

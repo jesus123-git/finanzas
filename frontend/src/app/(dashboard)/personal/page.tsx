@@ -8,6 +8,7 @@ import { useWebhookPoll } from '@/hooks/useWebhookPoll';
 import Button from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
+import { UserMenu } from '@/components/ui/UserMenu';
 import { apiDelete } from '@/lib/api';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
@@ -32,7 +33,7 @@ function BentoCard({ children, className = '' }: { children: React.ReactNode; cl
 }
 
 export default function PersonalPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { data, loading, error, refetch, applyOptimistic, revertOptimistic, confirmOptimistic } = useDashboard();
 
   const [modalOpen,      setModalOpen]      = useState(false);
@@ -115,18 +116,9 @@ export default function PersonalPage() {
               </button>
             )}
 
-            <div className="hidden sm:flex items-center gap-2 pl-1 border-l border-slate-200 dark:border-slate-700">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                  {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
-                </span>
-              </div>
-              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium hidden md:block">
-                {user?.name ?? user?.email}
-              </span>
+            <div className="pl-1 border-l border-slate-200 dark:border-slate-700">
+              <UserMenu />
             </div>
-
-            <Button variant="ghost" onClick={logout} className="text-sm px-3 py-2">Salir</Button>
           </div>
         </div>
       </header>

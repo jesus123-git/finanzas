@@ -14,12 +14,13 @@ import { ToastContainer, useToast }   from '@/components/ui/Toast';
 import { SkeletonAccount }            from '@/components/dashboard/SkeletonCard';
 import { ThemeToggle }                from '@/components/ui/ThemeToggle';
 import Button                         from '@/components/ui/Button';
+import { UserMenu }                   from '@/components/ui/UserMenu';
 import type { BankAccount }           from '@/types/dashboard.types';
 
 // ─── Página ───────────────────────────────────────────────────────────────────
 
 export default function AccountsPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   // ── Datos de cuentas ──────────────────────────────────────────────────────
   const {
@@ -119,21 +120,9 @@ export default function AccountsPage() {
               <span className="hidden sm:inline">Nueva cuenta</span>
             </Button>
 
-            {/* Avatar */}
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                  {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
-                </span>
-              </div>
-              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium hidden md:block">
-                {user?.name ?? user?.email}
-              </span>
+            <div className="pl-1 border-l border-slate-200 dark:border-slate-700">
+              <UserMenu />
             </div>
-
-            <Button variant="ghost" onClick={logout} className="text-sm px-3 py-2">
-              Salir
-            </Button>
           </div>
         </div>
       </header>

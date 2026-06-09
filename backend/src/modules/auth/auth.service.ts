@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -82,6 +83,41 @@ export class AuthService {
       email: user.email,
       name: user.name,
     });
+  }
+
+  // ─── Actualizar perfil ────────────────────────────────────────────────────
+
+  async updateProfile(userId: string, dto: { name?: string; email?: string }) {
+    // Si cambia el email verificamos que no esté en uso
+    if (dto.email) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: dto.email, NOT: { id: userId } },
+      });
+      if (existing) throw new ConflictException('El email ya está en uso');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { ...(dto.name !== undefined && { name: dto.name }), ...(dto.email && { email: dto.email }) },
+      select: { id: true, email: true, name: true },
+    });
+
+    return updated;
+  }
+
+  // ─── Cambiar contraseña ───────────────────────────────────────────────────
+
+  async changePassword(userId: string, dto: { currentPassword: string; newPassword: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!valid) throw new BadRequestException('La contraseña actual es incorrecta');
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+
+    return { message: 'Contraseña actualizada correctamente' };
   }
 
   // ─── Helpers privados ─────────────────────────────────────────────────────

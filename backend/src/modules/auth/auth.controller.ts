@@ -1,4 +1,16 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, UseGuards } from '@nestjs/common';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+class UpdateProfileDto {
+  @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
+  @ApiProperty({ required: false }) @IsOptional() @IsEmail() email?: string;
+}
+
+class ChangePasswordDto {
+  @ApiProperty() @IsString() currentPassword: string;
+  @ApiProperty() @IsString() @MinLength(6) newPassword: string;
+}
 import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
@@ -49,11 +61,37 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()  // Indica en Swagger que este endpoint requiere token
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener el perfil del usuario autenticado' })
   @ApiOkResponse({ description: 'Datos del usuario autenticado' })
   @ApiUnauthorizedResponse({ description: 'Token inválido o ausente' })
   getProfile(@CurrentUser() user: { id: string; email: string; name: string | null }) {
     return user;
+  }
+
+  // ─── PATCH /api/v1/auth/profile ───────────────────────────────────────────
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar nombre o email del perfil' })
+  updateProfile(
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user.id, dto);
+  }
+
+  // ─── PATCH /api/v1/auth/password ──────────────────────────────────────────
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+  changePassword(
+    @CurrentUser() user: { id: string },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(user.id, dto);
   }
 }

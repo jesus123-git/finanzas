@@ -7,7 +7,7 @@ import { useAuth } from '@/context/auth.context';
 import { apiGet } from '@/lib/api';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
-import Button from '@/components/ui/Button';
+import { UserMenu } from '@/components/ui/UserMenu';
 import { formatCurrency } from '@/lib/utils';
 import {
   TrendingUp, TrendingDown, DollarSign, Clock,
@@ -125,7 +125,7 @@ function KpiCard({ label, value, icon: Icon, iconBg, iconCl, loading }: {
 
 export default function BusinessDashboardPage() {
   const { id }           = useParams<{ id: string }>();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [kpis, setKpis]         = useState<KPIs | null>(null);
@@ -168,14 +168,9 @@ export default function BusinessDashboardPage() {
             >
               ← Mis empresas
             </Link>
-            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
-              <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
-                <span className="text-sm font-bold text-violet-600 dark:text-violet-400">
-                  {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
-                </span>
-              </div>
+            <div className="pl-2 border-l border-slate-200 dark:border-slate-700">
+              <UserMenu />
             </div>
-            <Button variant="ghost" onClick={logout} className="text-sm px-3 py-2">Salir</Button>
           </div>
         </div>
       </header>
