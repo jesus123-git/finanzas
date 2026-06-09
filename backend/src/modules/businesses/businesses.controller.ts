@@ -6,6 +6,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BusinessesService } from './businesses.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { BulkImportBizDto } from './dto/bulk-import-biz.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -41,6 +42,17 @@ export class BusinessesController {
     @Param('id') id: string,
   ) {
     return this.businessesService.findOne(user.id, id);
+  }
+
+  // POST /api/v1/businesses/:id/biz-transactions/bulk
+  @Post(':id/biz-transactions/bulk')
+  @ApiOperation({ summary: 'Importar lote de transacciones empresariales desde plantilla Excel' })
+  bulkImportBizTransactions(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+    @Body() dto: BulkImportBizDto,
+  ) {
+    return this.businessesService.bulkImportBizTransactions(user.id, id, dto);
   }
 
   // GET /api/v1/businesses/:id/dashboard

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+import { BulkImportBizDto } from './dto/bulk-import-biz.dto';
 
 @Injectable()
 export class BusinessesService {
@@ -74,6 +75,35 @@ export class BusinessesService {
       where: { id: businessId },
       data: { isActive: false },
     });
+  }
+
+  // ─── Importación masiva desde plantilla Excel empresa ────────────────────────
+
+  async bulkImportBizTransactions(userId: string, businessId: string, dto: BulkImportBizDto) {
+    // Verificar que el usuario es dueño de la empresa
+    await this.findOne(userId, businessId);
+
+    const data = dto.rows.map(row => ({
+      businessId,
+      type:          row.type,
+      amount:        row.amount,
+      description:   row.description,
+      // Almacenar desglose en categoryLabel: "subtotal|iva|clienteProveedor|nroFactura"
+      categoryLabel: [
+        row.clienteProveedor ?? '',
+        row.nroFactura       ?? '',
+        row.subtotal != null ? `subtotal:${row.subtotal}` : '',
+        row.iva      != null ? `iva:${row.iva}`           : '',
+      ].filter(Boolean).join(' | ') || null,
+      date: new Date(row.date),
+    }));
+
+    const result = await this.prisma.bizTransaction.createMany({ data, skipDuplicates: false });
+
+    return {
+      inserted:    result.count,
+      accountName: 'empresa', // no hay cuenta bancaria en módulo empresarial
+    };
   }
 
   // ─── Dashboard KPIs de la empresa ────────────────────────────────────────────

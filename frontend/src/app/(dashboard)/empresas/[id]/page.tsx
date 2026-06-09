@@ -8,6 +8,7 @@ import { apiGet } from '@/lib/api';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
 import { UserMenu } from '@/components/ui/UserMenu';
+import { ExcelImportWizard } from '@/components/excel/ExcelImportWizard';
 import { formatCurrency } from '@/lib/utils';
 import {
   TrendingUp, TrendingDown, DollarSign, Clock,
@@ -127,9 +128,10 @@ export default function BusinessDashboardPage() {
   const { id }           = useParams<{ id: string }>();
   const { user } = useAuth();
 
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [kpis, setKpis]         = useState<KPIs | null>(null);
-  const [loading, setLoading]   = useState(true);
+  const [business,    setBusiness]    = useState<Business | null>(null);
+  const [kpis,        setKpis]        = useState<KPIs | null>(null);
+  const [loading,     setLoading]     = useState(true);
+  const [excelOpen,   setExcelOpen]   = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -162,6 +164,19 @@ export default function BusinessDashboardPage() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+
+            {/* Botón importar Excel empresa */}
+            <button
+              onClick={() => setExcelOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 active:scale-95 transition-all shadow-sm"
+              title="Importar transacciones desde plantilla Excel empresa"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span className="hidden sm:inline">Importar Excel</span>
+            </button>
+
             <Link
               href="/empresas"
               className="text-sm text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 px-2 py-1 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
@@ -228,6 +243,24 @@ export default function BusinessDashboardPage() {
         </div>
 
       </main>
+
+      {/* Wizard importación Excel empresa */}
+      <ExcelImportWizard
+        open={excelOpen}
+        mode="empresa"
+        businessId={id as string}
+        onClose={() => setExcelOpen(false)}
+        onSuccess={() => {
+          // Refrescar KPIs tras importación exitosa
+          if (!id) return;
+          Promise.all([
+            apiGet<Business>(`/businesses/${id}`),
+            apiGet<KPIs>(`/businesses/${id}/dashboard`),
+          ])
+            .then(([biz, k]) => { setBusiness(biz); setKpis(k); })
+            .catch(console.error);
+        }}
+      />
     </div>
   );
 }

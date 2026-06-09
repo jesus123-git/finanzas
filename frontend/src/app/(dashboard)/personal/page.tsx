@@ -243,7 +243,7 @@ export default function PersonalPage() {
       )}
       <CreateAccountModal open={accountOpen} onClose={() => setAccountOpen(false)} onSuccess={(account) => { setAccountOpen(false); toast(`Cuenta "${account.name}" creada 🎉`, 'success'); refetch(); }} />
       {data && (
-        <ExcelImportWizard open={excelOpen} accounts={data.accounts} onClose={() => setExcelOpen(false)} onSuccess={() => { setExcelOpen(false); toast('Transacciones importadas 🎉', 'success'); refetch(); setCalendarSignal(s => s + 1); }} />
+        <ExcelImportWizard mode="personal" open={excelOpen} accounts={data.accounts} onClose={() => setExcelOpen(false)} onSuccess={() => { setExcelOpen(false); toast('Transacciones importadas 🎉', 'success'); refetch(); setCalendarSignal(s => s + 1); }} />
       )}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
