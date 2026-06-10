@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
@@ -22,11 +23,16 @@ import { PriceListsModule }  from './modules/price-lists/price-lists.module';
 import { QuotesModule }      from './modules/quotes/quotes.module';
 import { SuppliersModule }   from './modules/suppliers/suppliers.module';
 import { PurchasesModule }   from './modules/purchases/purchases.module';
-import { ReportsModule }     from './modules/reports/reports.module';
+import { ReportsModule }        from './modules/reports/reports.module';
+
+// ─── Módulo Email Ingestion ───────────────────────────────────────────────────
+import { EmailIngestionModule } from './modules/email-ingestion/email-ingestion.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Scheduler global: habilita el uso de @Cron() en todos los servicios
+    ScheduleModule.forRoot(),
     // Rate limiting global: máx 100 req / 60s por IP
     // Los endpoints de auth tienen su propio límite más estricto via @Throttle()
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
@@ -49,6 +55,9 @@ import { ReportsModule }     from './modules/reports/reports.module';
     SuppliersModule,
     PurchasesModule,
     ReportsModule,
+
+    // Email Ingestion Engine (cron + IMAP)
+    EmailIngestionModule,
   ],
   controllers: [AppController],
   providers: [

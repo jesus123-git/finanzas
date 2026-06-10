@@ -9,5 +9,6 @@ import { TransactionsModule } from '../transactions/transactions.module';
   imports: [TransactionsModule],
   controllers: [WebhooksController],
   providers: [WebhooksService, WebhookAuthGuard],
+  exports:  [WebhooksService],
 })
 export class WebhooksModule {}

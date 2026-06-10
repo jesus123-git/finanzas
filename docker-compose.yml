@@ -54,6 +54,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev_secret_cambia_en_produccion_32chars}
       JWT_EXPIRES_IN: 7d
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-nequi_bancolombia_secret_2026}
+      # ── Email Ingestion (IMAP) ───────────────────────────────────────────
+      # Dejar vacío o sin definir para desactivar la ingesta automática.
+      # Para Gmail: genera una "Contraseña de aplicación" en la cuenta Google.
+      EMAIL_HOST:     ${EMAIL_HOST:-}
+      EMAIL_PORT:     ${EMAIL_PORT:-993}
+      EMAIL_USER:     ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_MAILBOX:  ${EMAIL_MAILBOX:-INBOX}
     ports:
       - "3001:3001"
     volumes:

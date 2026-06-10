@@ -242,7 +242,7 @@ export class WebhooksService {
    *   Nequi:       "Nequi: Enviaste $15.000 a Maria L."
    *   Bancolombia: "Retiro Cajero $80.000 Cta Ahorros *1234"
    */
-  private parseText(text: string): ParsedSMS {
+  public parseText(text: string): ParsedSMS {
     // ── Proveedor ─────────────────────────────────────────────────────────
     let provider: 'NEQUI' | 'BANCOLOMBIA' | null = null;
     if (/bancolombia/i.test(text))  provider = 'BANCOLOMBIA';
@@ -276,8 +276,9 @@ export class WebhooksService {
     // Reconoce patrones: "Cta *5678", "cuenta *5678", "Cta. *5678",
     //                    "Cta Ahorros *5678", "cta *0001"
     let accountSuffix: string | null = null;
-    const suffixMatch = text.match(/cta\.?(?:\s+\w+)?\s*\*(\d{4})/i)
-                     ?? text.match(/cuenta\s*\*(\d{4})/i);
+    // (?!\d) asegura exactamente 4 dígitos — evita capturar *3017440903 (Nequi 10 dígitos)
+    const suffixMatch = text.match(/cta\.?(?:\s+\w+)?\s*\*(\d{4})(?!\d)/i)
+                     ?? text.match(/cuenta\s*\*(\d{4})(?!\d)/i);
     if (suffixMatch) accountSuffix = suffixMatch[1];
 
     return { provider, type, amount, accountSuffix };
@@ -291,7 +292,7 @@ export class WebhooksService {
    *   - Inglés:      "45,000"  → 45000   "45,000.00" → 45000
    *   - Mixto:       "1.234,00"→ 1234    "1,234.00"  → 1234
    */
-  private parseAmount(raw: string): number {
+  public parseAmount(raw: string): number {
     // Guardia defensiva: si raw no es un string o está vacío, devuelve 0.
     if (!raw || typeof raw !== 'string') return 0;
     const s        = raw.trim();
