@@ -254,7 +254,9 @@ export class EmailIngestionService implements OnModuleDestroy {
       'bancolombia.com.co',
       'bancolombia.com',
       'notificaciones.bancolombia.com',
+      'notificacionesbancolombia.com',   // an.notificacionesbancolombia.com
       'alertas.bancolombia.com',
+      'alertasynotificaciones',           // alertasynotificaciones@...
     ];
     const lower = from.toLowerCase();
     return BANK_DOMAINS.some(domain => lower.includes(domain));
