@@ -170,58 +170,69 @@ export class EmailIngestionService implements OnModuleDestroy {
         `[email-ingestion] UID ${uid} | from: ${fromHeader.slice(0, 60)} | body: "${textBody.slice(0, 80)}…"`,
       );
 
-      // ── Parsear con el motor de regex de WebhooksService ────────────────
-      const parsed = this.webhooks.parseText(textBody);
+      // ── Detectar proveedor y sufijo de cuenta (una vez por email) ────────
+      const baseInfo = this.webhooks.parseText(textBody);
 
-      // Suplemento para emails de Bancolombia: "desde tu cuenta XXXX" (sin asterisco)
-      // Los SMS usan *XXXX pero los emails de notificación usan "cuenta XXXX".
-      if (!parsed.accountSuffix && parsed.provider === 'BANCOLOMBIA') {
-        const emailSuffix = textBody.match(/(?:desde\s+tu\s+cuenta|cuenta\s+origen)\s+(\d{4})(?!\d)/i);
-        if (emailSuffix) parsed.accountSuffix = emailSuffix[1];
-      }
-
-      if (!parsed.provider || !parsed.type || !parsed.amount || parsed.amount <= 0) {
-        this.logger.verbose(
-          `[email-ingestion] UID ${uid}: no reconocido como transacción bancaria — skip`,
-        );
-        // NO marcamos como leído: puede ser un email de banco no-transaccional
-        // (p.ej. avisos de seguridad). El operador puede decidir borrarlo.
-        // Marcamos para no reprocesarlo en este ciclo
+      if (!baseInfo.provider) {
+        this.logger.verbose(`[email-ingestion] UID ${uid}: proveedor no reconocido — skip`);
         await client.messageFlagsAdd({ uid: String(uid) }, ['\\Seen']);
         return;
       }
 
+      const provider = baseInfo.provider as 'NEQUI' | 'BANCOLOMBIA';
+
+      // Suplemento para emails de Bancolombia: "desde tu cuenta XXXX" (sin asterisco)
+      let accountSuffix = baseInfo.accountSuffix;
+      if (!accountSuffix && provider === 'BANCOLOMBIA') {
+        const emailSuffix = textBody.match(/(?:desde\s+tu\s+cuenta|cuenta\s+origen)\s+(\d{4})(?!\d)/i);
+        if (emailSuffix) accountSuffix = emailSuffix[1];
+      }
+
       // ── Buscar cuenta bancaria en BD ─────────────────────────────────────
-      const account = await this.resolveAccount(parsed.provider, parsed.accountSuffix);
+      const account = await this.resolveAccount(provider, accountSuffix);
 
       if (!account) {
         this.logger.warn(
-          `[email-ingestion] UID ${uid}: cuenta ${parsed.provider} *${parsed.accountSuffix ?? '????'} no encontrada — omitido`,
+          `[email-ingestion] UID ${uid}: cuenta ${provider} *${accountSuffix ?? '????'} no encontrada — omitido`,
         );
+        await client.messageFlagsAdd({ uid: String(uid) }, ['\\Seen']);
+        return;
+      }
+
+      // ── Extraer TODAS las transacciones del email ─────────────────────────
+      // Un solo email puede contener varios movimientos apilados verticalmente.
+      // Buscamos cada ocurrencia de "$monto" y determinamos INCOME/EXPENSE
+      // mirando la ventana de texto circundante de cada una.
+      const txItems = this.extractAllTransactions(textBody);
+
+      if (txItems.length === 0) {
+        this.logger.verbose(`[email-ingestion] UID ${uid}: ningún monto con tipo reconocible — skip`);
         await client.messageFlagsAdd({ uid: String(uid) }, ['\\Seen']);
         return;
       }
 
       // ── Upsert de categoría ──────────────────────────────────────────────
-      const categoryName = parsed.provider === 'NEQUI' ? 'Nequi' : 'Bancolombia';
+      const categoryName = provider === 'NEQUI' ? 'Nequi' : 'Bancolombia';
       const category     = await this.upsertCategory(account.userId, categoryName);
 
-      // ── Crear transacción ────────────────────────────────────────────────
-      const description = `[Email] ${textBody.slice(0, 197)}${textBody.length > 197 ? '…' : ''}`;
+      // ── Crear una transacción por cada monto detectado ───────────────────
+      const descBase = `[Email] ${textBody.slice(0, 150)}${textBody.length > 150 ? '…' : ''}`;
 
-      await this.transactions.createForWebhook({
-        bankAccountId: account.id,
-        categoryId:    category.id,
-        userId:        account.userId,
-        amount:        parsed.amount,
-        type:          parsed.type as Extract<TransactionType, 'INCOME' | 'EXPENSE'>,
-        description,
-        date:          new Date(),
-      });
+      for (const item of txItems) {
+        await this.transactions.createForWebhook({
+          bankAccountId: account.id,
+          categoryId:    category.id,
+          userId:        account.userId,
+          amount:        item.amount,
+          type:          item.type,
+          description:   descBase,
+          date:          new Date(),
+        });
 
-      this.logger.log(
-        `[email-ingestion] ✓ UID ${uid} | ${parsed.provider} ${parsed.type} $${parsed.amount.toLocaleString('es-CO')} → "${account.name}"`,
-      );
+        this.logger.log(
+          `[email-ingestion] ✓ UID ${uid} | ${provider} ${item.type} $${item.amount.toLocaleString('es-CO')} → "${account.name}"`,
+        );
+      }
 
       // ── Marcar como LEÍDO para evitar duplicados ─────────────────────────
       await client.messageFlagsAdd({ uid: String(uid) }, ['\\Seen']);
@@ -405,5 +416,51 @@ export class EmailIngestionService implements OnModuleDestroy {
       update: {},
       create: { userId, name },
     });
+  }
+
+  /**
+   * Encuentra TODOS los montos ($X) en el texto del email y determina el tipo
+   * de cada transacción mirando la ventana de texto que rodea cada monto.
+   *
+   * Permite procesar emails de resumen de Bancolombia/Nequi que incluyen
+   * varios movimientos apilados en un solo mensaje.
+   */
+  private extractAllTransactions(
+    text: string,
+  ): Array<{ amount: number; type: Extract<TransactionType, 'INCOME' | 'EXPENSE'> }> {
+    const results: Array<{ amount: number; type: Extract<TransactionType, 'INCOME' | 'EXPENSE'> }> = [];
+    const amountRe = /\$\s?([\d.,]+)/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = amountRe.exec(text)) !== null) {
+      const amount = this.webhooks.parseAmount(match[1]);
+      if (!amount || amount <= 0) continue;
+
+      // Ventana de contexto: 250 chars antes (para capturar la oración que describe
+      // la acción) y 80 después del símbolo "$" (por si el verbo viene después).
+      const start   = Math.max(0, match.index - 250);
+      const end     = Math.min(text.length, match.index + 80);
+      const context = text.slice(start, end);
+
+      const type = this.detectTransactionType(context);
+      if (!type) continue;
+
+      results.push({ amount, type });
+    }
+
+    return results;
+  }
+
+  /** Determina EXPENSE o INCOME según las palabras clave en el contexto del monto */
+  private detectTransactionType(
+    context: string,
+  ): Extract<TransactionType, 'INCOME' | 'EXPENSE'> | null {
+    if (/compra|retiro|pago\s|pagaste|enviaste|transferiste|d[eé]bito|debit/i.test(context)) {
+      return 'EXPENSE';
+    }
+    if (/recib(?:i[oó]|iste)|abono|consignaci[oó]n|te\s+enviaron|transferencia\s+recib/i.test(context)) {
+      return 'INCOME';
+    }
+    return null;
   }
 }
