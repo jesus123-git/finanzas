@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
+import { DianScraperService } from './dian-scraper.service';
 
-// PrismaModule es @Global() → no hace falta importarlo.
-// JwtAuthGuard y CurrentUser se importan directamente desde sus archivos.
 @Module({
   controllers: [TransactionsController],
-  providers: [TransactionsService],
+  providers: [TransactionsService, DianScraperService],
   exports: [TransactionsService],
 })
 export class TransactionsModule {}

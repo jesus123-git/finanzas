@@ -22,6 +22,9 @@ import { ExcelImportWizard } from '@/components/excel/ExcelImportWizard';
 import { BankSimulatorPanel } from '@/components/dashboard/BankSimulatorPanel';
 import { NewTransactionModal } from '@/components/transactions/NewTransactionModal';
 import { CreateAccountModal } from '@/components/accounts/CreateAccountModal';
+import { QrScanner } from '@/components/transactions/QrScanner';
+import { DianConfirmModal } from '@/components/transactions/DianConfirmModal';
+import { useDianScanner } from '@/hooks/useDianScanner';
 import { SkeletonCard, SkeletonRow, SkeletonAccount } from '@/components/dashboard/SkeletonCard';
 
 function BentoCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -41,6 +44,14 @@ export default function PersonalPage() {
   const [excelOpen,      setExcelOpen]      = useState(false);
   const [calendarSignal, setCalendarSignal] = useState(0);
   const { toasts, toast, dismissToast } = useToast();
+
+  const handleDianSuccess = useCallback(() => {
+    toast('Factura DIAN guardada 🎉', 'success');
+    refetch();
+    setCalendarSignal(s => s + 1);
+  }, [refetch, toast]);
+
+  const dian = useDianScanner(handleDianSuccess);
 
   const todayForStats = new Date();
   const { data: categoryStats } = useCategoryStats(todayForStats.getFullYear(), todayForStats.getMonth() + 1);
@@ -236,6 +247,57 @@ export default function PersonalPage() {
           )}
         </div>
       </main>
+
+      {/* ── Botón flotante — Escanear Factura DIAN ─────────────────────── */}
+      {data && (
+        <button
+          onClick={dian.startScan}
+          aria-label="Escanear factura DIAN"
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-5 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-semibold shadow-lg shadow-emerald-500/30 transition-all duration-200"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9V6a3 3 0 013-3h3M15 3h3a3 3 0 013 3v3M3 15v3a3 3 0 003 3h3m6 0h3a3 3 0 003-3v-3" />
+            <rect x="7" y="7" width="4" height="4" rx="0.5" strokeWidth={1.5} />
+            <rect x="13" y="7" width="4" height="4" rx="0.5" strokeWidth={1.5} />
+            <rect x="7" y="13" width="4" height="4" rx="0.5" strokeWidth={1.5} />
+            <path strokeLinecap="round" strokeWidth={1.5} d="M13 15h1m2 0h1m-2 2v-2" />
+          </svg>
+          <span className="hidden sm:inline">Escanear Factura</span>
+        </button>
+      )}
+
+      {/* Escáner QR */}
+      {dian.state === 'scanning' && (
+        <QrScanner onScan={dian.handleQrDetected} onClose={dian.cancelScan} />
+      )}
+
+      {/* Modal de procesamiento */}
+      {dian.state === 'processing' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 max-w-xs mx-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+              <div className="w-7 h-7 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 dark:text-slate-100">Leyendo factura…</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">🤖 MaIA está consultando los datos oficiales de la DIAN</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación bento */}
+      {(dian.state === 'confirm' || dian.state === 'saving') && dian.invoice && data && (
+        <DianConfirmModal
+          open
+          invoice={dian.invoice}
+          accounts={data.accounts}
+          saving={dian.state === 'saving'}
+          error={dian.error}
+          onCancel={dian.cancelScan}
+          onConfirm={dian.confirmAndSave}
+        />
+      )}
 
       {/* Modales */}
       {data && (

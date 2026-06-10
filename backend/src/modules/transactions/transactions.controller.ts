@@ -27,6 +27,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { FilterTransactionsDto } from './dto/filter-transactions.dto';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
 import { BulkImportDto } from './dto/bulk-import.dto';
+import { ScanDianDto } from './dto/scan-dian.dto';
 import { PaginatedTransactionsDto, TransactionResponseDto } from './dto/transaction-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -141,6 +142,36 @@ export class TransactionsController {
     @Query() query: CalendarQueryDto,
   ) {
     return this.transactionsService.getCategoryStats(user.id, query.year, query.month);
+  }
+
+  // ─── POST /api/v1/transactions/scan-dian ─────────────────────────────────
+
+  @Post('scan-dian')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Leer factura electrónica DIAN desde URL de código QR',
+    description:
+      'Recibe la URL extraída del QR de una factura electrónica, hace scraping ' +
+      'del portal de la DIAN y retorna los datos estructurados de la factura ' +
+      '(emisor, NIT, fecha, total, IVA) junto con una categoría sugerida por IA.',
+  })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        emisor: 'ALMACENES ÉXITO S.A.',
+        nit: '860.502.778-0',
+        fecha: '2026-06-10',
+        total: 87500,
+        subtotal: 73529,
+        iva: 13971,
+        cufe: 'abc123...',
+        categoria: 'Alimentación',
+        rawUrl: 'https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=...',
+      },
+    },
+  })
+  scanDian(@Body() dto: ScanDianDto) {
+    return this.transactionsService.scanDian(dto.url);
   }
 
   // ─── DELETE /api/v1/transactions/:id ─────────────────────────────────────

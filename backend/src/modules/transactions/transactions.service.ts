@@ -10,6 +10,7 @@ import { balanceDeltaForAccount } from '../../common/utils/balance.utils';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { FilterTransactionsDto } from './dto/filter-transactions.dto';
 import { BulkImportDto } from './dto/bulk-import.dto';
+import { DianScraperService } from './dian-scraper.service';
 
 // ─── Parámetros para creación interna (webhooks, seeds, etc.) ────────────────
 
@@ -41,7 +42,10 @@ const TRANSACTION_SELECT = {
 
 @Injectable()
 export class TransactionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma:       PrismaService,
+    private readonly dianScraper: DianScraperService,
+  ) {}
 
   // ─── Guardia de ownership reutilizable ───────────────────────────────────
   // Verifica que una cuenta bancaria exista y pertenezca al usuario.
@@ -432,5 +436,11 @@ export class TransactionsService {
 
       return transaction;
     });
+  }
+
+  // ─── Scraping de factura electrónica DIAN ───────────────────────────────────
+
+  async scanDian(url: string) {
+    return this.dianScraper.scrape(url);
   }
 }
