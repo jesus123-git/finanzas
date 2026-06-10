@@ -82,21 +82,9 @@ export function WorkspaceSwitcher() {
           'border transition-all duration-150',
           'text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2',
           // Personal
-          mode === 'personal' && [
-            'bg-emerald-50 dark:bg-emerald-950/50',
-            'border-emerald-200 dark:border-emerald-800',
-            'text-emerald-700 dark:text-emerald-300',
-            'hover:bg-emerald-100 dark:hover:bg-emerald-900/60',
-            'focus:ring-emerald-500',
-          ],
+          mode === 'personal' && 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 focus:ring-emerald-500',
           // Empresarial
-          mode === 'empresas' && [
-            'bg-violet-50 dark:bg-violet-950/50',
-            'border-violet-200 dark:border-violet-800',
-            'text-violet-700 dark:text-violet-300',
-            'hover:bg-violet-100 dark:hover:bg-violet-900/60',
-            'focus:ring-violet-500',
-          ],
+          mode === 'empresas' && 'bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/60 focus:ring-violet-500',
         )}
       >
         <span className="text-base leading-none" aria-hidden>{current.icon}</span>

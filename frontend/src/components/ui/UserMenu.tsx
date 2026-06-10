@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import {
   User, Settings, Lock, HelpCircle, LogOut,
-  ChevronDown, X, Check, Eye, EyeOff, Loader2,
+  X, Check, Eye, EyeOff, Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth.context';
 import { apiPatch } from '@/lib/api';
@@ -226,18 +226,14 @@ export function UserMenu() {
       <div ref={ref} className="relative">
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500"
+          title={displayName}
+          className="relative flex items-center justify-center w-9 h-9 rounded-full ring-2 ring-transparent hover:ring-violet-400 dark:hover:ring-violet-500 focus:outline-none focus:ring-violet-500 transition-all duration-200"
         >
-          <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-violet-600 dark:text-violet-300 select-none">{initial}</span>
+          <div className="w-9 h-9 rounded-full bg-violet-600 dark:bg-violet-700 flex items-center justify-center">
+            <span className="text-sm font-bold text-white select-none">{initial}</span>
           </div>
-          <span className="hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-200 max-w-[120px] truncate">
-            {displayName}
-          </span>
-          <ChevronDown
-            size={15}
-            className={`text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          />
+          {/* Indicador de estado activo */}
+          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-800 bg-emerald-400 transition-opacity duration-200 ${open ? 'opacity-0' : 'opacity-100'}`} />
         </button>
 
         {/* Dropdown */}

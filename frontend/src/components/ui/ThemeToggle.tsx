@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const STORAGE_KEY = 'finanzas-theme';
 
 interface Props {
   className?: string;
@@ -13,45 +11,23 @@ interface Props {
 /**
  * ThemeToggle — botón para alternar entre modo claro y oscuro.
  *
- * Los íconos y colores del botón se controlan con clases `dark:` de Tailwind,
- * NO con estado React, para que siempre reflejen el estado real del DOM sin
- * depender de efectos, temporizadores ni sync con next-themes.
+ * El cambio de tema se hace SIEMPRE a través de next-themes (useTheme),
+ * que es quien controla la clase `dark` en <html>. Manipular el DOM
+ * directamente entra en conflicto con next-themes: en el siguiente
+ * re-render reaplica su estado interno y revierte el cambio.
+ *
+ * Los íconos se controlan con clases `dark:` de Tailwind para evitar
+ * hydration-mismatch (el servidor no conoce el tema del cliente).
  */
 export function ThemeToggle({ className }: Props) {
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const { resolvedTheme, setTheme } = useTheme();
 
   const handleToggle = () => {
-    const root = document.documentElement;
-    const isDarkNow = root.classList.contains('dark');
-    const next      = isDarkNow ? 'light' : 'dark';
-
-    root.classList.remove('light', 'dark');
-    root.classList.add(next);
-
-    try { localStorage.setItem(STORAGE_KEY, next); } catch (_) {}
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
-
-  // Asegura que aria-label se actualice en cliente sin hydration-mismatch
-  useEffect(() => {
-    const btn = btnRef.current;
-    if (!btn) return;
-
-    const update = () => {
-      const dark = document.documentElement.classList.contains('dark');
-      btn.setAttribute('aria-label', dark ? 'Cambiar a modo día' : 'Cambiar a modo noche');
-      btn.setAttribute('title',      dark ? 'Modo día'           : 'Modo noche');
-    };
-
-    update();
-
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <button
-      ref={btnRef}
       onClick={handleToggle}
       aria-label="Cambiar tema"
       title="Cambiar tema"
