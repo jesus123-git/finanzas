@@ -147,8 +147,13 @@ export class EmailIngestionService implements OnModuleDestroy {
       if (!message) return;
 
       // ── Extraer remitente del source raw para filtro temprano ───────────
-      const rawSource  = message.source?.toString('utf8') ?? '';
-      const fromHeader = this.extractHeader(rawSource.slice(0, 2000), 'from');
+      const rawSource   = message.source?.toString('utf8') ?? '';
+      // Los emails de Gmail llevan muchos headers SMTP antes del From: (Received,
+      // DKIM-Signature, ARC-Seal, etc.). Usar la sección de cabeceras completa
+      // en lugar de un slice fijo de N chars, para no cortar antes del From:.
+      const headerBound = rawSource.indexOf('\r\n\r\n');
+      const headerBlock = headerBound !== -1 ? rawSource.slice(0, headerBound) : rawSource.slice(0, 8000);
+      const fromHeader  = this.extractHeader(headerBlock, 'from');
       const isBankEmail = this.isBankSender(fromHeader);
 
       if (!isBankEmail) {
@@ -329,10 +334,13 @@ export class EmailIngestionService implements OnModuleDestroy {
     return bodySection.replace(/\r\n/g, '\n').trim();
   }
 
-  /** Lee el valor de una cabecera específica (case-insensitive) */
+  /** Lee el valor de una cabecera específica (case-insensitive).
+   *  Primero desdobla headers multi-línea (RFC 2822 folding: CRLF + espacio/tab). */
   private extractHeader(headers: string, name: string): string {
-    const re    = new RegExp(`^${name}:\\s*(.+)$`, 'im');
-    const match = headers.match(re);
+    // Desdoblar: CRLF seguido de whitespace → un espacio (RFC 2822 §2.2.3)
+    const unfolded = headers.replace(/\r\n([ \t])/g, ' ');
+    const re       = new RegExp(`^${name}:\\s*(.+)$`, 'im');
+    const match    = unfolded.match(re);
     return match ? match[1].trim() : '';
   }
 
