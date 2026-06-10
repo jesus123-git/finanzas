@@ -276,8 +276,9 @@ export class WebhooksService {
     // Reconoce patrones: "Cta *5678", "cuenta *5678", "Cta. *5678",
     //                    "Cta Ahorros *5678", "cta *0001"
     let accountSuffix: string | null = null;
-    const suffixMatch = text.match(/cta\.?(?:\s+\w+)?\s*\*(\d{4})/i)
-                     ?? text.match(/cuenta\s*\*(\d{4})/i);
+    // (?!\d) asegura exactamente 4 dígitos — evita capturar *3017440903 (Nequi 10 dígitos)
+    const suffixMatch = text.match(/cta\.?(?:\s+\w+)?\s*\*(\d{4})(?!\d)/i)
+                     ?? text.match(/cuenta\s*\*(\d{4})(?!\d)/i);
     if (suffixMatch) accountSuffix = suffixMatch[1];
 
     return { provider, type, amount, accountSuffix };

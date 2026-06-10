@@ -107,11 +107,11 @@ export class EmailIngestionService implements OnModuleDestroy {
       const mailbox = await client.mailboxOpen(cfg.mailbox);
       this.logger.verbose(`[email-ingestion] Buzón "${cfg.mailbox}" abierto — ${mailbox.exists} mensajes`);
 
-      // Buscar no-leídos de HOY
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Buscar no-leídos de las últimas 24h (no solo desde medianoche,
+      // para no perder emails nocturnos del día anterior)
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      const searchResult = await client.search({ seen: false, since: today });
+      const searchResult = await client.search({ seen: false, since: since24h });
       const uids: number[] = Array.isArray(searchResult) ? searchResult : [];
 
       if (uids.length === 0) {
@@ -172,6 +172,13 @@ export class EmailIngestionService implements OnModuleDestroy {
 
       // ── Parsear con el motor de regex de WebhooksService ────────────────
       const parsed = this.webhooks.parseText(textBody);
+
+      // Suplemento para emails de Bancolombia: "desde tu cuenta XXXX" (sin asterisco)
+      // Los SMS usan *XXXX pero los emails de notificación usan "cuenta XXXX".
+      if (!parsed.accountSuffix && parsed.provider === 'BANCOLOMBIA') {
+        const emailSuffix = textBody.match(/(?:desde\s+tu\s+cuenta|cuenta\s+origen)\s+(\d{4})(?!\d)/i);
+        if (emailSuffix) parsed.accountSuffix = emailSuffix[1];
+      }
 
       if (!parsed.provider || !parsed.type || !parsed.amount || parsed.amount <= 0) {
         this.logger.verbose(
@@ -331,12 +338,22 @@ export class EmailIngestionService implements OnModuleDestroy {
     }
 
     if (enc === 'quoted-printable') {
-      // Decodifica secuencias =XX y soft line breaks =\r\n
-      return body
-        .replace(/=\r?\n/g, '')
-        .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) =>
-          String.fromCharCode(parseInt(hex, 16)),
-        );
+      // Elimina soft line breaks (=\r\n), luego recoge todos los bytes
+      // y los decodifica como UTF-8. String.fromCharCode solo funciona para
+      // Latin-1; los emails reales de Bancolombia usan UTF-8 multi-byte (=C2=A1 etc.)
+      const withoutSoftBreaks = body.replace(/=\r?\n/g, '');
+      const bytes: number[] = [];
+      let i = 0;
+      while (i < withoutSoftBreaks.length) {
+        if (withoutSoftBreaks[i] === '=' && i + 2 < withoutSoftBreaks.length) {
+          bytes.push(parseInt(withoutSoftBreaks.slice(i + 1, i + 3), 16));
+          i += 3;
+        } else {
+          bytes.push(withoutSoftBreaks.charCodeAt(i));
+          i++;
+        }
+      }
+      return Buffer.from(bytes).toString('utf8');
     }
 
     return body; // 7bit / 8bit / binary → sin transformación
