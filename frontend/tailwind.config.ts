@@ -14,15 +14,56 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'sans-serif'],
+        // Manrope: cuerpo — corporativa, cálida y muy legible
+        sans:    ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        // Sora: titulares y marca — geométrica, elegante, innovadora
+        display: ['var(--font-sora)', 'var(--font-manrope)', 'sans-serif'],
       },
       colors: {
+        // ─── Identidad NOMI ────────────────────────────────────────────────
+        // Base de marca #00796B (teal profundo): fresco, confiable, financiero.
         brand: {
-          50:  '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          900: '#14532d',
+          50:  '#e6f4f2',
+          100: '#c2e4e0',
+          200: '#8fcfc7',
+          300: '#56b8ac',
+          400: '#26a695',
+          500: '#009688',
+          600: '#00796B',   // ← color base de NOMI
+          700: '#00695c',
+          800: '#00564b',
+          900: '#003d35',
+          950: '#002b25',
+        },
+        // El módulo personal usaba 'emerald' en toda la app: remapeado a la
+        // escala NOMI para re-vestir la interfaz completa sin tocar cada vista.
+        emerald: {
+          50:  '#e6f4f2',
+          100: '#c2e4e0',
+          200: '#8fcfc7',
+          300: '#56b8ac',
+          400: '#26a695',
+          500: '#009688',
+          600: '#00796B',
+          700: '#00695c',
+          800: '#00564b',
+          900: '#003d35',
+          950: '#002b25',
+        },
+        // Base monocroma: 'slate' (gris azulado) → grises neutros puros.
+        // Light mode sobre blanco real, dark mode sobre negro real.
+        slate: {
+          50:  '#fafafa',
+          100: '#f4f4f5',
+          200: '#e5e5e6',
+          300: '#d4d4d6',
+          400: '#a1a1a6',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a',
+          900: '#18181b',
+          950: '#0b0b0d',
         },
       },
       borderRadius: {

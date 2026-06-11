@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
 import { UserMenu } from '@/components/ui/UserMenu';
+import { Logo } from '@/components/ui/Logo';
 import { apiDelete } from '@/lib/api';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
@@ -29,7 +30,7 @@ import { SkeletonCard, SkeletonRow, SkeletonAccount } from '@/components/dashboa
 
 function BentoCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow duration-200 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 ${className}`}>
       {children}
     </div>
   );
@@ -79,15 +80,13 @@ export default function PersonalPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
       {/* ── Header sticky ─────────────────────────────────────────────────── */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20">
+      <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
 
           {/* Logo */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-sm">
-              <span className="text-sm">💸</span>
-            </div>
-            <span className="font-bold text-slate-800 dark:text-white text-lg hidden md:block">MaIA</span>
+          <div className="flex-shrink-0">
+            <span className="hidden md:block"><Logo size={32} href="/personal" /></span>
+            <span className="md:hidden"><Logo size={32} markOnly href="/personal" /></span>
           </div>
 
           {/* ── WorkspaceSwitcher (nuevo) ── */}
@@ -142,7 +141,7 @@ export default function PersonalPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
               {greeting ? (
-                <>{greeting}, {user?.name?.split(' ')[0] ?? 'usuario'} 👋</>
+                <>{greeting}, {user?.name?.split(' ')[0] ?? 'usuario'}</>
               ) : (
                 <span className="inline-block h-8 w-56 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse align-middle" aria-hidden />
               )}

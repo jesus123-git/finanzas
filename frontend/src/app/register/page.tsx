@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/auth.context';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import { LogoMark } from '@/components/ui/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface FormErrors {
@@ -98,8 +99,8 @@ export default function RegisterPage() {
 
         {/* Logo / Marca */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500 shadow-lg mb-4">
-            <span className="text-2xl">💸</span>
+          <div className="inline-flex justify-center mb-4">
+            <LogoMark size={56} />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Crea tu cuenta</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">

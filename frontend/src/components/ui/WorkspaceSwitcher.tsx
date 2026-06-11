@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { User, Building2, type LucideIcon } from 'lucide-react';
 import { useWorkspace, type WorkspaceMode } from '@/context/workspace.context';
 import { cn } from '@/lib/utils';
 
@@ -8,12 +9,12 @@ import { cn } from '@/lib/utils';
 //
 // Dropdown elegante en el Navbar para cambiar entre módulos.
 // Al cambiar de workspace redirige a /personal o /empresas y cambia el
-// color de acento de toda la app (verde = personal, violeta = empresarial).
+// color de acento de toda la app (teal NOMI = personal, violeta = empresarial).
 
 interface Option {
   value:    WorkspaceMode;
   label:    string;
-  icon:     string;
+  icon:     LucideIcon;
   subtitle: string;
   color:    string;        // Clase de color del ícono
   badge:    string;        // Clase del badge pill
@@ -23,7 +24,7 @@ const OPTIONS: Option[] = [
   {
     value:    'personal',
     label:    'Finanzas Personales',
-    icon:     '👤',
+    icon:     User,
     subtitle: 'Cuentas, transacciones y ahorro',
     color:    'text-emerald-600 dark:text-emerald-400',
     badge:    'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
@@ -31,7 +32,7 @@ const OPTIONS: Option[] = [
   {
     value:    'empresas',
     label:    'Finanzas Empresariales',
-    icon:     '🏢',
+    icon:     Building2,
     subtitle: 'Facturas, clientes y reportes',
     color:    'text-violet-600 dark:text-violet-400',
     badge:    'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
@@ -87,7 +88,7 @@ export function WorkspaceSwitcher() {
           mode === 'empresas' && 'bg-violet-50 dark:bg-violet-950/50 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/60 focus:ring-violet-500',
         )}
       >
-        <span className="text-base leading-none" aria-hidden>{current.icon}</span>
+        <current.icon size={16} aria-hidden />
         {/* En móvil ocultamos el label, en desktop se muestra */}
         <span className="hidden sm:inline truncate max-w-[140px]">{current.label}</span>
         {/* Chevron */}
@@ -136,10 +137,10 @@ export function WorkspaceSwitcher() {
                 >
                   {/* Ícono con anillo de color */}
                   <span className={cn(
-                    'w-9 h-9 flex items-center justify-center rounded-xl text-lg flex-shrink-0',
-                    isActive ? opt.badge : 'bg-slate-100 dark:bg-slate-700',
+                    'w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0',
+                    isActive ? opt.badge : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400',
                   )}>
-                    {opt.icon}
+                    <opt.icon size={17} />
                   </span>
 
                   <div className="min-w-0 flex-1">
