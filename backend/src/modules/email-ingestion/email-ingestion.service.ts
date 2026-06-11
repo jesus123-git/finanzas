@@ -94,8 +94,8 @@ export class EmailIngestionService implements OnModuleDestroy {
       const mailbox = await client.mailboxOpen(cfg.mailbox);
       this.logger.verbose(`[email-ingestion] [${cfg.user}] Buzón "${cfg.mailbox}" — ${mailbox.exists} mensajes`);
 
-      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const searchResult = await client.search({ seen: false, since: since24h }, { uid: true });
+      const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const searchResult = await client.search({ seen: false, since: since7d }, { uid: true });
       const uids: number[] = Array.isArray(searchResult) ? searchResult : [];
 
       if (uids.length === 0) {
