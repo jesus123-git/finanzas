@@ -392,13 +392,22 @@ export class EmailIngestionService implements OnModuleDestroy {
     if (!provider) return null;
 
     if (provider === 'BANCOLOMBIA') {
-      if (!accountSuffix) return null;
+      // Primero intenta match exacto por sufijo de cuenta
+      if (accountSuffix) {
+        const byId = await this.prisma.bankAccount.findFirst({
+          where: {
+            provider:          'BANCOLOMBIA',
+            externalAccountId: { endsWith: accountSuffix },
+          },
+          select: { id: true, userId: true, name: true },
+        });
+        if (byId) return byId;
+      }
+      // Fallback: primera cuenta Bancolombia disponible
       return this.prisma.bankAccount.findFirst({
-        where: {
-          provider:          'BANCOLOMBIA',
-          externalAccountId: { endsWith: accountSuffix },
-        },
-        select: { id: true, userId: true, name: true },
+        where:   { provider: 'BANCOLOMBIA' },
+        select:  { id: true, userId: true, name: true },
+        orderBy: { createdAt: 'asc' },
       });
     }
 
