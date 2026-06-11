@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   User, Settings, Lock, HelpCircle, LogOut,
   X, Check, Eye, EyeOff, Loader2,
@@ -182,6 +183,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [open,  setOpen]  = useState(false);
   const [modal, setModal] = useState<Modal>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -208,8 +210,7 @@ export function UserMenu() {
       icon: Settings,
       label: 'Configuración',
       desc: 'Preferencias de la cuenta',
-      action: () => {},           // próximamente
-      disabled: true,
+      action: () => { setOpen(false); router.push('/configuracion'); },
     },
     {
       icon: HelpCircle,
