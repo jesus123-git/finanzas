@@ -106,7 +106,7 @@ export class EmailIngestionService implements OnModuleDestroy {
       this.logger.log(`[email-ingestion] [${cfg.user}] ${uids.length} mensaje(s) no-leído(s)`);
 
       for (const uid of uids) {
-        await this.processEmail(client, uid, cfg);
+        await this.processEmail(client, uid, cfg, userId);
       }
 
     } catch (err) {
@@ -122,6 +122,7 @@ export class EmailIngestionService implements OnModuleDestroy {
     client:  InstanceType<typeof ImapFlow>,
     uid:     number,
     cfg:     ImapConfig,
+    userId:  string,
   ): Promise<void> {
     try {
       // Descargar el mensaje completo en formato source (RFC 2822 raw).
@@ -170,26 +171,8 @@ export class EmailIngestionService implements OnModuleDestroy {
 
       const provider = baseInfo.provider as 'NEQUI' | 'BANCOLOMBIA';
 
-      // Suplemento para emails de Bancolombia: extrae sufijo de cuenta del cuerpo del email
-      let accountSuffix = baseInfo.accountSuffix;
-      if (!accountSuffix && provider === 'BANCOLOMBIA') {
-        const emailSuffix =
-          textBody.match(/(?:desde\s+tu\s+cuenta|cuenta\s+origen)\s+(\d{4})/i) ??
-          textBody.match(/\bcuenta\s+(\d{4})\b/i) ??
-          textBody.match(/\*(\d{4})\b/);
-        if (emailSuffix) accountSuffix = emailSuffix[1];
-      }
-      this.logger.verbose(`[email-ingestion] UID ${uid} | provider=${provider} suffix=${accountSuffix} body="${textBody.slice(0, 120)}…"`);
-
-      // ── Buscar cuenta bancaria en BD ─────────────────────────────────────
-      const account = await this.resolveAccount(provider, accountSuffix);
-
-      if (!account) {
-        this.logger.warn(
-          `[email-ingestion] UID ${uid}: cuenta ${provider} *${accountSuffix ?? '????'} no encontrada — omitido`,
-        );
-        return;
-      }
+      // ── Buscar o crear cuenta bancaria para este usuario ──────────────────
+      const account = await this.resolveOrCreateAccount(userId, provider);
 
       // ── Extraer TODAS las transacciones del email ─────────────────────────
       // Un solo email puede contener varios movimientos apilados verticalmente.
@@ -221,7 +204,7 @@ export class EmailIngestionService implements OnModuleDestroy {
         });
 
         this.logger.log(
-          `[email-ingestion] ✓ UID ${uid} | ${provider} ${item.type} $${item.amount.toLocaleString('es-CO')} → "${account.name}"`,
+          `Transacción procesada para UserId: ${userId} | Tipo: ${item.type} | Monto: $${item.amount.toLocaleString('es-CO')} | Cuenta: "${account.name}"`,
         );
       }
 
@@ -381,43 +364,22 @@ export class EmailIngestionService implements OnModuleDestroy {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  /**
-   * Busca la cuenta bancaria en la BD según proveedor y sufijo de cuenta.
-   * Reutiliza la misma lógica de WebhooksService.handleMobileParser.
-   */
-  private async resolveAccount(
-    provider:      'NEQUI' | 'BANCOLOMBIA' | null,
-    accountSuffix: string | null,
-  ) {
-    if (!provider) return null;
-
-    if (provider === 'BANCOLOMBIA') {
-      // Primero intenta match exacto por sufijo de cuenta
-      if (accountSuffix) {
-        const byId = await this.prisma.bankAccount.findFirst({
-          where: {
-            provider:          'BANCOLOMBIA',
-            externalAccountId: { endsWith: accountSuffix },
-          },
-          select: { id: true, userId: true, name: true },
-        });
-        if (byId) return byId;
-      }
-      // Fallback: primera cuenta Bancolombia disponible
-      return this.prisma.bankAccount.findFirst({
-        where:   { provider: 'BANCOLOMBIA' },
-        select:  { id: true, userId: true, name: true },
-        orderBy: { createdAt: 'asc' },
-      });
-    }
-
-    // NEQUI: sin sufijo de cuenta en los emails (a diferencia de SMS donde viene
-    // el número del teléfono). Usamos la primera cuenta Nequi del usuario.
-    // Si hay múltiples cuentas Nequi el operador debe configurar reglas adicionales.
-    return this.prisma.bankAccount.findFirst({
-      where:  { provider: 'NEQUI' },
-      select: { id: true, userId: true, name: true },
+  /** Busca la cuenta del proveedor para el usuario. Si no existe, la crea automáticamente. */
+  private async resolveOrCreateAccount(userId: string, provider: 'NEQUI' | 'BANCOLOMBIA') {
+    const existing = await this.prisma.bankAccount.findFirst({
+      where:   { userId, provider },
+      select:  { id: true, userId: true, name: true },
       orderBy: { createdAt: 'asc' },
+    });
+
+    if (existing) return existing;
+
+    const name = provider === 'BANCOLOMBIA' ? 'Bancolombia' : 'Nequi';
+    this.logger.log(`[email-ingestion] Cuenta ${provider} no encontrada. Creando automáticamente para UserId: ${userId}`);
+
+    return this.prisma.bankAccount.create({
+      data:   { userId, name, type: 'SAVINGS', balance: 0, currency: 'COP', provider },
+      select: { id: true, userId: true, name: true },
     });
   }
 
