@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Manrope, Sora } from 'next/font/google';
 import { type ReactNode } from 'react';
 import { AuthProvider } from '@/context/auth.context';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import { QueryProvider } from '@/components/ui/QueryProvider';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+// ─── Tipografía NOMI ──────────────────────────────────────────────────────────
+// Manrope → cuerpo: corporativa, cálida, excelente legibilidad en cifras.
+// Sora    → titulares y marca: geométrica, elegante, con carácter propio.
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
+const sora    = Sora({ subsets: ['latin'], variable: '--font-sora', weight: ['400', '600', '700', '800'] });
 
 export const metadata: Metadata = {
-  title: { default: 'Finanzas', template: '%s | Finanzas' },
-  description: 'Gestiona tus finanzas personales con claridad',
+  title: { default: 'NOMI — Finanzas con claridad', template: '%s | NOMI' },
+  description: 'NOMI: la plataforma financiera para personas y negocios en Colombia',
 };
 
 // ─── RootLayout ────────────────────────────────────────────────────────────────
@@ -30,8 +34,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es" suppressHydrationWarning>
       <body
         className={`
-          ${inter.variable} font-sans antialiased
-          bg-slate-50 dark:bg-slate-950
+          ${manrope.variable} ${sora.variable} font-sans antialiased
+          bg-white dark:bg-slate-950
           text-slate-900 dark:text-slate-100
         `}
       >

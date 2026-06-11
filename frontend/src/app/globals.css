@@ -2,9 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Variables de fuente ──────────────────────────────────────────────────── */
-:root {
-  --font-inter: 'Inter', sans-serif;
+/* ─── Tipografía NOMI ──────────────────────────────────────────────────────── */
+/* Manrope (cuerpo) y Sora (display) se inyectan vía next/font en layout.tsx.  */
+/* Los titulares de toda la app usan Sora sin tocar cada componente.           */
+h1, h2, h3 {
+  font-family: var(--font-sora), var(--font-manrope), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Cifras alineadas en tablas y tarjetas financieras */
+.tabular-nums, td, th {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── Transiciones globales de tema ───────────────────────────────────────── */
@@ -35,13 +43,13 @@ html {
 /* Modo claro */
 ::-webkit-scrollbar               { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track         { background: transparent; }
-::-webkit-scrollbar-thumb         { background: #cbd5e1; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover   { background: #94a3b8; }
+::-webkit-scrollbar-thumb         { background: #d4d4d6; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover   { background: #a1a1a6; }
 
 /* Modo oscuro */
-.dark ::-webkit-scrollbar-thumb       { background: #475569; }
-.dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+.dark ::-webkit-scrollbar-thumb       { background: #3f3f46; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
-/* ─── Selección de texto ──────────────────────────────────────────────────── */
-::selection       { background: #6ee7b7; color: #1e293b; }
-.dark ::selection { background: #065f46; color: #f1f5f9; }
+/* ─── Selección de texto — teal NOMI ──────────────────────────────────────── */
+::selection       { background: #8fcfc7; color: #002b25; }
+.dark ::selection { background: #00564b; color: #e6f4f2; }

@@ -1,3 +1,4 @@
+import { Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { DashboardData } from '@/types/dashboard.types';
 
@@ -5,40 +6,48 @@ interface Props {
   data: DashboardData;
 }
 
+// ─── SummaryCards — lenguaje visual NOMI ──────────────────────────────────────
+//
+// Una sola tarjeta héroe en teal profundo (la firma de la marca) y métricas
+// sobre superficie monocroma con borde fino. El color se usa con intención:
+// solo el indicador de dirección lleva color, nunca la tarjeta entera.
+
 export function SummaryCards({ data }: Props) {
   const netBalance = data.summary.totalByCurrency['COP'] ?? 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-      {/* Saldo total — tarjeta destacada con gradiente */}
-      <div className="sm:col-span-1 bg-gradient-to-br from-emerald-500 to-emerald-700 dark:from-emerald-700 dark:to-emerald-900 rounded-2xl p-6 shadow-md text-white">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-emerald-100 text-sm font-medium">Saldo neto total</p>
-          <span className="text-2xl bg-white/20 p-2 rounded-xl">💰</span>
+      {/* ── Saldo total — tarjeta héroe NOMI ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-900 p-6 text-white">
+        {/* Glow decorativo sutil */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" aria-hidden />
+
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+            <Wallet size={17} className="text-white" />
+          </div>
+          <p className="text-sm font-medium text-white/80">Saldo neto total</p>
         </div>
-        <p className="text-3xl font-bold tracking-tight">
+
+        <p className="font-display text-3xl font-bold tracking-tight tabular-nums">
           {formatCurrency(netBalance)}
         </p>
-        <p className="text-emerald-200 text-xs mt-1">
+        <p className="text-white/60 text-xs mt-1.5">
           {data.summary.accountCount} cuenta{data.summary.accountCount !== 1 ? 's' : ''} activa{data.summary.accountCount !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {/* Ingresos del período */}
       <MetricCard
         label="Ingresos del período"
         value={data.totalIncome}
-        icon="📈"
         trend="up"
         subtitle="Últimas 10 transacciones"
       />
 
-      {/* Gastos del período */}
       <MetricCard
         label="Gastos del período"
         value={data.totalExpense}
-        icon="📉"
         trend="down"
         subtitle="Últimas 10 transacciones"
       />
@@ -47,42 +56,31 @@ export function SummaryCards({ data }: Props) {
 }
 
 function MetricCard({
-  label, value, icon, trend, subtitle,
+  label, value, trend, subtitle,
 }: {
   label: string;
   value: number;
-  icon: string;
   trend: 'up' | 'down';
   subtitle: string;
 }) {
-  const styles = {
-    up: {
-      wrap:   'bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50',
-      icon:   'bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400',
-      amount: 'text-blue-700 dark:text-blue-300',
-      label:  'text-slate-500 dark:text-slate-400',
-      sub:    'text-slate-400 dark:text-slate-500',
-    },
-    down: {
-      wrap:   'bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50',
-      icon:   'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400',
-      amount: 'text-rose-700 dark:text-rose-300',
-      label:  'text-slate-500 dark:text-slate-400',
-      sub:    'text-slate-400 dark:text-slate-500',
-    },
-  };
-  const s = styles[trend];
+  const Icon = trend === 'up' ? ArrowUpRight : ArrowDownRight;
+  const indicator = trend === 'up'
+    ? 'bg-brand-50 text-brand-600 dark:bg-brand-950 dark:text-brand-300'
+    : 'bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400';
 
   return (
-    <div className={`${s.wrap} rounded-2xl p-6 shadow-sm`}>
-      <div className="flex items-center justify-between mb-4">
-        <p className={`${s.label} text-sm font-medium`}>{label}</p>
-        <span className={`text-xl p-2 rounded-xl ${s.icon}`}>{icon}</span>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+      <div className="flex items-center gap-2.5 mb-5">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${indicator}`}>
+          <Icon size={17} />
+        </div>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
       </div>
-      <p className={`text-2xl font-bold ${s.amount}`}>
+
+      <p className="font-display text-2xl font-bold tracking-tight tabular-nums text-slate-900 dark:text-white">
         {formatCurrency(value)}
       </p>
-      <p className={`${s.sub} text-xs mt-1`}>{subtitle}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">{subtitle}</p>
     </div>
   );
 }

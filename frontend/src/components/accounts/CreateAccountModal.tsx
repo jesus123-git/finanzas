@@ -309,12 +309,12 @@ export function CreateAccountModal({ open, onClose, onSuccess }: Props) {
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex gap-3">
+      <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex gap-3">
         <Button
           variant="ghost"
           onClick={handleClose}
           fullWidth
-          className="border border-slate-200"
+          className="border border-slate-200 dark:border-slate-700"
         >
           Cancelar
         </Button>

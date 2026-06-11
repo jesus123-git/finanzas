@@ -36,7 +36,7 @@ const TAB_ACTIVE: Record<string, string> = {
   blue:    'bg-blue-500    text-white shadow-sm',
 };
 
-const TAB_INACTIVE = 'bg-slate-100 text-slate-500 hover:bg-slate-200';
+const TAB_INACTIVE = 'bg-transparent text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700';
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export function NewTransactionModal({
         {/* ── Selector de tipo (tabs) ─────────────────────────────────── */}
         <div>
           <p className="text-sm font-medium text-slate-700 mb-2">Tipo</p>
-          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
             {TYPE_TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -228,8 +228,8 @@ export function NewTransactionModal({
       </div>
 
       {/* ── Footer sticky con botones ──────────────────────────────────── */}
-      <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex gap-3">
-        <Button variant="ghost" onClick={onClose} fullWidth className="border border-slate-200">
+      <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-4 flex gap-3">
+        <Button variant="ghost" onClick={onClose} fullWidth className="border border-slate-200 dark:border-slate-700">
           Cancelar
         </Button>
         <Button

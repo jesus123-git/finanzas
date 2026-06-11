@@ -7,6 +7,7 @@
 // sin llamadas a IA externas.  En el Paso 3 se reemplazará por insights
 // reales de Recharts + análisis de categorías.
 
+import { Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { FinancialTrafficLight } from './FinancialTrafficLight';
 import type { DashboardData } from '@/types/dashboard.types';
@@ -55,11 +56,11 @@ export function AIAdvisorCard({ data, userName, topCategories }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
-          <span className="text-lg">🤖</span>
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-800 flex items-center justify-center shadow-sm flex-shrink-0">
+          <Sparkles size={18} className="text-white" />
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">MaIA — Asesora Financiera</h3>

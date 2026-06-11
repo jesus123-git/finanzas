@@ -8,6 +8,8 @@ import { apiGet, apiPost } from '@/lib/api';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
 import { UserMenu } from '@/components/ui/UserMenu';
+import { Logo } from '@/components/ui/Logo';
+import { Building2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 
@@ -76,13 +78,11 @@ export default function EmpresasPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
       {/* Header */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20">
+      <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center gap-3">
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center shadow-sm">
-              <span className="text-sm">🏢</span>
-            </div>
-            <span className="font-bold text-slate-800 dark:text-white text-lg hidden md:block">MaIA</span>
+          <div className="flex-shrink-0">
+            <span className="hidden md:block"><Logo size={32} href="/empresas" /></span>
+            <span className="md:hidden"><Logo size={32} markOnly href="/empresas" /></span>
           </div>
 
           <WorkspaceSwitcher />
@@ -188,7 +188,11 @@ export default function EmpresasPage() {
           </div>
         ) : businesses.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-            <div className="text-5xl mb-4">🏢</div>
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                <Building2 size={32} className="text-violet-600 dark:text-violet-400" />
+              </div>
+            </div>
             <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-1">No tienes empresas aún</h2>
             <p className="text-sm text-slate-400 dark:text-slate-500 mb-6">
               Crea tu primera empresa para gestionar facturas, clientes y finanzas.
@@ -205,7 +209,7 @@ export default function EmpresasPage() {
                   {/* Avatar */}
                   <div className="flex items-start gap-3 mb-4">
                     <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-200 dark:group-hover:bg-violet-900/60 transition-colors">
-                      <span className="text-xl">🏢</span>
+                      <Building2 size={22} className="text-violet-600 dark:text-violet-400" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{biz.name}</h3>

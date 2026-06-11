@@ -66,14 +66,14 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const inputCls = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm';
+  const inputCls = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm';
 
   return (
     <ModalWrap title="Editar perfil" onClose={onClose}>
       <div className="space-y-4">
         {/* Avatar */}
         <div className="flex justify-center mb-2">
-          <div className="w-16 h-16 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center text-2xl font-bold text-violet-600 dark:text-violet-300 select-none">
+          <div className="w-16 h-16 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center text-2xl font-bold text-brand-600 dark:text-brand-300 select-none">
             {(name || user?.email || 'U')[0].toUpperCase()}
           </div>
         </div>
@@ -94,7 +94,7 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
             {saving ? <><Loader2 size={15} className="animate-spin" /> Guardando…</> : 'Guardar cambios'}
           </button>
         </div>
@@ -139,7 +139,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition text-sm"
+        className="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition text-sm"
       />
       <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
         {show ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -170,7 +170,7 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium transition">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
             {saving ? <><Loader2 size={15} className="animate-spin" /> Guardando…</> : 'Cambiar contraseña'}
           </button>
         </div>
@@ -228,13 +228,13 @@ export function UserMenu() {
         <button
           onClick={() => setOpen(v => !v)}
           title={displayName}
-          className="relative flex items-center justify-center w-9 h-9 rounded-full ring-2 ring-transparent hover:ring-violet-400 dark:hover:ring-violet-500 focus:outline-none focus:ring-violet-500 transition-all duration-200"
+          className="relative flex items-center justify-center w-9 h-9 rounded-full ring-2 ring-transparent hover:ring-brand-400 dark:hover:ring-brand-500 focus:outline-none focus:ring-brand-500 transition-all duration-200"
         >
-          <div className="w-9 h-9 rounded-full bg-violet-600 dark:bg-violet-700 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-800 flex items-center justify-center">
             <span className="text-sm font-bold text-white select-none">{initial}</span>
           </div>
           {/* Indicador de estado activo */}
-          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-800 bg-emerald-400 transition-opacity duration-200 ${open ? 'opacity-0' : 'opacity-100'}`} />
+          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-800 bg-brand-400 transition-opacity duration-200 ${open ? 'opacity-0' : 'opacity-100'}`} />
         </button>
 
         {/* Dropdown */}
@@ -243,8 +243,8 @@ export function UserMenu() {
             {/* Encabezado del menú */}
             <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900/60 flex items-center justify-center flex-shrink-0">
-                  <span className="text-base font-bold text-violet-600 dark:text-violet-300">{initial}</span>
+                <div className="w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center flex-shrink-0">
+                  <span className="text-base font-bold text-brand-600 dark:text-brand-300">{initial}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">{user?.name ?? 'Sin nombre'}</p>
@@ -262,8 +262,8 @@ export function UserMenu() {
                   disabled={item.disabled}
                   className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-left group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-violet-50 dark:group-hover:bg-violet-900/30 flex items-center justify-center flex-shrink-0 transition-colors">
-                    <item.icon size={15} className="text-slate-500 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors" />
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-50 dark:group-hover:bg-brand-950/60 flex items-center justify-center flex-shrink-0 transition-colors">
+                    <item.icon size={15} className="text-slate-500 dark:text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.label}</p>

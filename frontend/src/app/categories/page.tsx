@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, FormEvent } from 'react';
 import Link from 'next/link';
 import { apiGet, apiPost, apiDelete } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/ui/Logo';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/context/auth.context';
@@ -116,23 +117,12 @@ export default function CategoriesPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+      <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
 
           {/* Logo + breadcrumb */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2.5 group"
-              aria-label="Ir al dashboard"
-            >
-              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-sm">
-                <span className="text-sm">💸</span>
-              </div>
-              <span className="font-bold text-slate-800 dark:text-white text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:block">
-                Finanzas
-              </span>
-            </Link>
+            <Logo size={32} href="/dashboard" />
             <div className="hidden sm:flex items-center gap-2 text-sm">
               <span className="text-slate-300 dark:text-slate-600">/</span>
               <span className="font-semibold text-slate-600 dark:text-slate-300">Mis categorías</span>
