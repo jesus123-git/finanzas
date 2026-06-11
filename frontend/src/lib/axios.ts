@@ -2,11 +2,15 @@
  * Instancia de Axios configurada para el backend de MaIA.
  * Compatibilidad con las páginas del módulo empresarial que usan `api.get/post/patch/delete`.
  *
- * Adjunta automáticamente el JWT almacenado en localStorage bajo la clave 'token'.
- * Redirige al login si el servidor responde 401.
+ * IMPORTANTE: usa la MISMA clave de token que lib/api.ts (getToken/removeToken).
+ * Tener dos claves distintas ('token' vs 'finanzas_token') causaba que todas
+ * las páginas de empresa enviaran requests sin JWT → 401 → redirect en cadena
+ * /login → /dashboard → /personal.
  */
 
 import axios from 'axios';
+import { getToken, removeToken } from './api';
+import { removeSessionCookie } from './cookies';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL
@@ -21,7 +25,7 @@ export const api = axios.create({
 // ─── Request interceptor: inyectar JWT ────────────────────────────────────────
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,7 +38,10 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
+      // Limpiar token Y cookie espejo: si la cookie queda viva, el middleware
+      // rebota /login → /dashboard → /personal en un loop confuso
+      removeToken();
+      removeSessionCookie();
       window.location.href = '/login';
     }
     return Promise.reject(error);

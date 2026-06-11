@@ -44,6 +44,15 @@ export function DianConfirmModal({ open, invoice, accounts, saving, error, onCan
   const [loadingCats,   setLoadingCats]   = useState(true);
   const [selectedAcct,  setSelectedAcct]  = useState(accounts?.[0]?.id ?? '');
   const [selectedCat,   setSelectedCat]   = useState('');
+  const [description,   setDescription]   = useState('');
+  const [amountStr,     setAmountStr]     = useState('');
+
+  // Pre-llenar descripción y monto editables con lo extraído de la factura
+  useEffect(() => {
+    if (!open) return;
+    setDescription(invoice.emisor ? `Compra en ${invoice.emisor}` : 'Factura electrónica DIAN');
+    setAmountStr(invoice.total != null ? String(invoice.total) : '');
+  }, [open, invoice.emisor, invoice.total]);
 
   // Cargar categorías al abrir el modal
   useEffect(() => {
@@ -62,13 +71,19 @@ export function DianConfirmModal({ open, invoice, accounts, saving, error, onCan
       .finally(() => setLoadingCats(false));
   }, [open, invoice.categoria]);
 
+  const amount = parseFloat(amountStr);
+  const amountValid = !isNaN(amount) && amount > 0;
+
   const handleConfirm = () => {
-    if (!selectedAcct || !selectedCat) return;
+    if (!selectedAcct || !selectedCat || !amountValid || !description.trim()) return;
+    // Referencia DIAN (NIT/CUFE) se anexa a la descripción del usuario para trazabilidad
+    const ref = [invoice.nit && `NIT ${invoice.nit}`, invoice.cufe && `CUFE ${invoice.cufe.slice(0, 8)}…`]
+      .filter(Boolean).join(' · ');
     onConfirm({
       bankAccountId: selectedAcct,
       categoryId:    selectedCat,
-      description:   `[DIAN] ${invoice.emisor ?? 'Factura electrónica'}${invoice.nit ? ` · NIT ${invoice.nit}` : ''}${invoice.cufe ? ` · ${invoice.cufe.slice(0, 10)}…` : ''}`,
-      amount:        invoice.total ?? 0,
+      description:   ref ? `${description.trim()} [${ref}]`.slice(0, 200) : description.trim().slice(0, 200),
+      amount,
     });
   };
 
@@ -102,9 +117,85 @@ export function DianConfirmModal({ open, invoice, accounts, saving, error, onCan
           <BentoCell label="Fecha"    value={invoice.fecha  ?? '—'} />
           <BentoCell label="Subtotal" value={fmt(invoice.subtotal)} />
           <BentoCell label="IVA"      value={fmt(invoice.iva)} />
-          <div className="col-span-2">
-            <BentoCell label="Total a pagar" value={fmt(invoice.total)} highlight />
+        </div>
+
+        {/* ── Detalle de productos (factura traducida) ─────────────────── */}
+        {invoice.items.length > 0 ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                🛒 Productos de la factura ({invoice.items.length})
+              </p>
+            </div>
+            <div className="max-h-44 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
+              {invoice.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 px-4 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-700 dark:text-slate-200 truncate">{item.descripcion}</p>
+                    {(item.cantidad != null || item.precioUnitario != null) && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
+                        {item.cantidad != null && `${item.cantidad} und`}
+                        {item.cantidad != null && item.precioUnitario != null && ' × '}
+                        {item.precioUnitario != null && fmt(item.precioUnitario)}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex-shrink-0">
+                    {fmt(item.total ?? item.precioUnitario)}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
+        ) : (
+          <p className="text-xs text-slate-400 dark:text-slate-500 px-1">
+            La DIAN no publica el detalle de productos para esta factura — solo los totales.
+          </p>
+        )}
+
+        {/* Total final */}
+        <div className="rounded-xl p-3.5 border bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Total a pagar</p>
+          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{fmt(invoice.total)}</p>
+        </div>
+
+        {/* ── ¿De qué fue el gasto? (editable) ─────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            ¿De qué fue el gasto?
+          </label>
+          <input
+            type="text"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            maxLength={160}
+            placeholder="Ej: Mercado de la semana"
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition text-sm"
+          />
+        </div>
+
+        {/* ── Monto a registrar (editable, pre-llenado con el total) ────── */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Monto a registrar
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={amountStr}
+              onChange={e => setAmountStr(e.target.value)}
+              placeholder={invoice.total == null ? 'La DIAN no publicó el total — escríbelo' : '0'}
+              className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition text-sm"
+            />
+          </div>
+          {invoice.total != null && amountValid && amount !== invoice.total && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              ⚠️ El monto difiere del total de la factura ({fmt(invoice.total)})
+            </p>
+          )}
         </div>
 
         {/* Cuenta */}
@@ -156,7 +247,7 @@ export function DianConfirmModal({ open, invoice, accounts, saving, error, onCan
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={saving || !selectedAcct || !selectedCat || invoice.total == null}
+            disabled={saving || !selectedAcct || !selectedCat || !amountValid || !description.trim()}
             className="flex-1 gap-2"
           >
             {saving ? (
