@@ -21,7 +21,7 @@ interface Business {
   taxRegime?: string;
   isActive: boolean;
   createdAt: string;
-  _count: { customers: number; invoices: number; bizTransactions: number };
+  _count?: { customers: number; invoices: number; bizTransactions: number };
 }
 
 // ─── Selector de Empresa ──────────────────────────────────────────────────────
@@ -216,9 +216,9 @@ export default function EmpresasPage() {
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-2 mt-auto">
                     {[
-                      { label: 'Clientes',   value: biz._count.customers },
-                      { label: 'Facturas',   value: biz._count.invoices },
-                      { label: 'Movimientos', value: biz._count.bizTransactions },
+                      { label: 'Clientes',   value: biz._count?.customers ?? 0 },
+                      { label: 'Facturas',   value: biz._count?.invoices ?? 0 },
+                      { label: 'Movimientos', value: biz._count?.bizTransactions ?? 0 },
                     ].map(s => (
                       <div key={s.label} className="text-center bg-slate-50 dark:bg-slate-700/50 rounded-lg py-2">
                         <p className="text-base font-bold text-slate-700 dark:text-slate-200">{s.value}</p>

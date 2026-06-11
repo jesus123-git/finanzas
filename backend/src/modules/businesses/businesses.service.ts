@@ -16,6 +16,17 @@ export class BusinessesService {
         ...dto,
         userId,
       },
+      // Incluir _count igual que findAll: el frontend renderiza las tarjetas
+      // con biz._count.* y sin esto la empresa recién creada rompe la lista
+      include: {
+        _count: {
+          select: {
+            customers: true,
+            invoices: true,
+            bizTransactions: true,
+          },
+        },
+      },
     });
   }
 

@@ -5,6 +5,13 @@ import { apiPost } from '@/lib/api';
 
 export type ScanState = 'idle' | 'scanning' | 'processing' | 'confirm' | 'saving';
 
+export interface DianInvoiceItem {
+  descripcion:    string;
+  cantidad:       number | null;
+  precioUnitario: number | null;
+  total:          number | null;
+}
+
 export interface DianInvoiceData {
   emisor:    string | null;
   nit:       string | null;
@@ -14,6 +21,7 @@ export interface DianInvoiceData {
   iva:       number | null;
   cufe:      string | null;
   categoria: string;
+  items:     DianInvoiceItem[];
   rawUrl:    string;
 }
 
@@ -56,10 +64,15 @@ export function useDianScanner(onSuccess: () => void) {
   }) => {
     setState('saving');
     try {
+      // La fecha de la DIAN viene en formatos variados ("10-06-2026", "2026/06/10 14:30"…)
+      // Si no parsea a una fecha válida, usar la fecha actual
+      const parsed = invoice?.fecha ? new Date(invoice.fecha) : null;
+      const date = parsed && !isNaN(parsed.getTime()) ? parsed.toISOString() : new Date().toISOString();
+
       await apiPost('/transactions', {
         ...payload,
         type: 'EXPENSE',
-        date: invoice?.fecha ? new Date(invoice.fecha).toISOString() : new Date().toISOString(),
+        date,
       });
       setState('idle');
       setInvoice(null);

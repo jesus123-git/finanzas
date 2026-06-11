@@ -1,6 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { load, type CheerioAPI } from 'cheerio';
+
+export interface DianInvoiceItem {
+  descripcion:    string;
+  cantidad:       number | null;
+  precioUnitario: number | null;
+  total:          number | null;
+}
 
 export interface DianInvoiceData {
   emisor:    string | null;
@@ -11,8 +18,16 @@ export interface DianInvoiceData {
   iva:       number | null;
   cufe:      string | null;
   categoria: string;
+  items:     DianInvoiceItem[];
   rawUrl:    string;
 }
+
+// Solo se permite hacer fetch a dominios oficiales de la DIAN: el QR podría
+// contener cualquier URL y este servicio corre del lado del servidor (SSRF)
+const ALLOWED_HOSTS = [
+  'catalogo-vpfe.dian.gov.co',
+  'catalogo-vpfe-hab.dian.gov.co',
+];
 
 // ─── Reglas de auto-clasificación ────────────────────────────────────────────
 const KEYWORD_RULES: { keywords: string[]; category: string }[] = [
@@ -84,6 +99,7 @@ export class DianScraperService {
   private readonly logger = new Logger(DianScraperService.name);
 
   async scrape(url: string): Promise<DianInvoiceData> {
+    this.assertDianUrl(url);
     this.logger.log(`[DIAN] Iniciando scraping → ${url}`);
 
     const html = await this.fetchHtml(url);
@@ -105,10 +121,28 @@ export class DianScraperService {
     } catch { cufe = null; }
 
     const categoria = this.classify(emisor ?? '');
+    const items     = this.extractItems($);
 
-    this.logger.log(`[DIAN] OK → emisor=${emisor} total=${total} cat=${categoria}`);
+    this.logger.log(`[DIAN] OK → emisor=${emisor} total=${total} items=${items.length} cat=${categoria}`);
 
-    return { emisor, nit, fecha, total, subtotal, iva, cufe, categoria, rawUrl: url };
+    return { emisor, nit, fecha, total, subtotal, iva, cufe, categoria, items, rawUrl: url };
+  }
+
+  // ── Validación de dominio (anti-SSRF) ─────────────────────────────────────
+
+  private assertDianUrl(url: string): void {
+    let host: string;
+    try {
+      host = new URL(url).hostname.toLowerCase();
+    } catch {
+      throw new BadRequestException('La URL del código QR no es válida');
+    }
+    if (!ALLOWED_HOSTS.includes(host)) {
+      throw new BadRequestException(
+        'El código QR no corresponde a una factura electrónica DIAN. ' +
+        'Escanea el QR impreso en la factura.',
+      );
+    }
   }
 
   // ── Petición HTTP con User-Agent y timeout ────────────────────────────────
@@ -176,6 +210,53 @@ export class DianScraperService {
     }
 
     return null;
+  }
+
+  // ── Extracción de líneas de detalle (productos) ───────────────────────────
+  //
+  // Busca una tabla cuyo encabezado contenga "Descripción" y alguna columna
+  // de cantidad/precio. El portal DIAN no siempre publica el detalle en la
+  // página del QR (varía por proveedor tecnológico): si no hay tabla de
+  // items se devuelve [] y el frontend lo comunica al usuario.
+
+  private extractItems($: CheerioAPI): DianInvoiceItem[] {
+    const items: DianInvoiceItem[] = [];
+
+    $('table').each((_, table) => {
+      if (items.length) return; // ya encontramos la tabla de detalle
+
+      const headerCells = $(table).find('tr').first().find('th, td')
+        .map((_, el) => $(el).text().trim().toLowerCase()).get();
+
+      if (!headerCells.length) return;
+
+      const idxDesc = headerCells.findIndex(h => h.includes('descripci') || h.includes('producto') || h.includes('detalle'));
+      const idxCant = headerCells.findIndex(h => h.includes('cantidad') || h === 'cant' || h.includes('cant.'));
+      const idxUnit = headerCells.findIndex(h => h.includes('unitario') || h.includes('precio unit') || h.includes('vlr unit'));
+      const idxTot  = headerCells.findIndex((h, i) =>
+        i !== idxUnit && (h.includes('total') || h.includes('valor')));
+
+      // La tabla debe tener al menos descripción + algún valor numérico
+      if (idxDesc === -1 || (idxCant === -1 && idxUnit === -1 && idxTot === -1)) return;
+
+      $(table).find('tr').slice(1).each((_, row) => {
+        const cells = $(row).find('td').map((_, el) => $(el).text().trim()).get();
+        if (cells.length <= idxDesc) return;
+
+        const descripcion = cells[idxDesc];
+        // Filtrar filas de totales/subtotales que algunas tablas mezclan
+        if (!descripcion || /^(sub)?total|^iva|^impuesto/i.test(descripcion)) return;
+
+        items.push({
+          descripcion,
+          cantidad:       idxCant !== -1 ? this.toCurrency(cells[idxCant] ?? null) : null,
+          precioUnitario: idxUnit !== -1 ? this.toCurrency(cells[idxUnit] ?? null) : null,
+          total:          idxTot  !== -1 ? this.toCurrency(cells[idxTot]  ?? null) : null,
+        });
+      });
+    });
+
+    return items;
   }
 
   // ── Parseo de moneda colombiana ───────────────────────────────────────────
