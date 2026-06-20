@@ -27,6 +27,9 @@ import { PlanModule }             from './modules/plan/plan.module';
 import { ReportsModule }          from './modules/reports/reports.module';
 import { BusinessMembersModule }  from './modules/business-members/business-members.module';
 
+// ─── Módulo Subscriptions ─────────────────────────────────────────────────────
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+
 // ─── Módulo Email Ingestion ───────────────────────────────────────────────────
 import { EmailIngestionModule } from './modules/email-ingestion/email-ingestion.module';
 import { EmailConfigModule }    from './modules/email-config/email-config.module';
@@ -60,6 +63,9 @@ import { EmailConfigModule }    from './modules/email-config/email-config.module
     PurchasesModule,
     ReportsModule,
     BusinessMembersModule,
+
+    // Subscriptions
+    SubscriptionsModule,
 
     // Email Ingestion Engine (cron + IMAP)
     EmailIngestionModule,
