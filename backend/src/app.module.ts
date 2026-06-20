@@ -23,8 +23,9 @@ import { PriceListsModule }  from './modules/price-lists/price-lists.module';
 import { QuotesModule }      from './modules/quotes/quotes.module';
 import { SuppliersModule }   from './modules/suppliers/suppliers.module';
 import { PurchasesModule }   from './modules/purchases/purchases.module';
-import { PlanModule }        from './modules/plan/plan.module';
-import { ReportsModule }        from './modules/reports/reports.module';
+import { PlanModule }             from './modules/plan/plan.module';
+import { ReportsModule }          from './modules/reports/reports.module';
+import { BusinessMembersModule }  from './modules/business-members/business-members.module';
 
 // ─── Módulo Email Ingestion ───────────────────────────────────────────────────
 import { EmailIngestionModule } from './modules/email-ingestion/email-ingestion.module';
@@ -58,6 +59,7 @@ import { EmailConfigModule }    from './modules/email-config/email-config.module
     SuppliersModule,
     PurchasesModule,
     ReportsModule,
+    BusinessMembersModule,
 
     // Email Ingestion Engine (cron + IMAP)
     EmailIngestionModule,
