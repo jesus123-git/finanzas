@@ -520,6 +520,7 @@ model BusinessMember {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, userId])
+  @@index([userId])
   @@map("business_members")
 }
 
@@ -532,8 +533,11 @@ model BusinessInvite {
   token      String     @unique
   expiresAt  DateTime
   usedAt     DateTime?
+  createdAt  DateTime   @default(now())
 
   business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, email])
+  @@index([businessId])
   @@map("business_invites")
 }
