@@ -38,19 +38,30 @@ export class BusinessesService {
   // ─── Listar empresas del usuario ──────────────────────────────────────────────
 
   async findAll(userId: string) {
-    return this.prisma.business.findMany({
-      where: { userId, isActive: true },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: {
-            customers: true,
-            invoices: true,
-            bizTransactions: true,
+    const [ownedBusinesses, memberBusinesses] = await Promise.all([
+      this.prisma.business.findMany({
+        where: { userId, isActive: true },
+        orderBy: { createdAt: 'desc' },
+        include: { _count: { select: { customers: true, invoices: true, bizTransactions: true } } },
+      }),
+      this.prisma.businessMember.findMany({
+        where: { userId },
+        include: {
+          business: {
+            include: { _count: { select: { customers: true, invoices: true, bizTransactions: true } } },
           },
         },
-      },
-    });
+      }),
+    ]);
+
+    const shared = memberBusinesses
+      .filter(m => m.business.isActive)
+      .map(m => ({ ...m.business, memberRole: m.role, memberTitle: m.title }));
+
+    return [
+      ...ownedBusinesses.map(b => ({ ...b, memberRole: 'OWNER' as const })),
+      ...shared,
+    ];
   }
 
   // ─── Obtener una empresa por ID ───────────────────────────────────────────────
