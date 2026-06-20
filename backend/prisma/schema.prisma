@@ -7,6 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums — Plan y Equipo ───────────────────────────────────────────────────
+
+enum PlanType {
+  FREE
+  PRO
+  EMPRESA
+}
+
+enum MemberRole {
+  EDITOR
+  VIEWER
+}
+
 // ─── Enums — Módulo Personal ──────────────────────────────────────────────────
 
 enum TransactionType {
@@ -73,6 +86,9 @@ model User {
   name         String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  plan          PlanType  @default(FREE)
+  planExpiresAt DateTime?
+  planStartedAt DateTime?
 
   // Módulo personal
   bankAccounts BankAccount[]
@@ -83,6 +99,7 @@ model User {
 
   // Módulo empresarial
   businesses       Business[]
+  businessMembers  BusinessMember[]
 
   // Integración de correo
   emailIntegration EmailIntegration?
@@ -214,6 +231,7 @@ model Business {
   name          String
   nit           String?
   legalName     String?
+  currency      String    @default("COP")
   logoUrl       String?
   address       String?
   phone         String?
@@ -233,6 +251,8 @@ model Business {
   suppliers     Supplier[]
   purchases     Purchase[]
   bizTransactions BizTransaction[]
+  members       BusinessMember[]
+  invites       BusinessInvite[]
 
   @@map("businesses")
 }
@@ -484,4 +504,36 @@ model BizTransaction {
 
   @@index([businessId, date])
   @@map("biz_transactions")
+}
+
+// ─── Módulo Empresarial: Equipo ───────────────────────────────────────────────
+
+model BusinessMember {
+  id         String     @id @default(uuid())
+  businessId String
+  userId     String
+  role       MemberRole
+  title      String?
+  invitedAt  DateTime   @default(now())
+
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@map("business_members")
+}
+
+model BusinessInvite {
+  id         String     @id @default(uuid())
+  businessId String
+  email      String
+  role       MemberRole
+  title      String?
+  token      String     @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_invites")
 }
