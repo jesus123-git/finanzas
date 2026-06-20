@@ -4,6 +4,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { BusinessesService } from './businesses.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BulkImportBizDto } from './dto/bulk-import-biz.dto';
@@ -15,7 +16,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)   // todos los endpoints requieren estar autenticado
 @Controller('businesses')
 export class BusinessesController {
-  constructor(private businessesService: BusinessesService) {}
+  constructor(
+    private businessesService: BusinessesService,
+    private planService: PlanService,
+  ) {}
 
   // POST /api/v1/businesses
   @Post()
@@ -42,6 +46,16 @@ export class BusinessesController {
     @Param('id') id: string,
   ) {
     return this.businessesService.findOne(user.id, id);
+  }
+
+  // GET /api/v1/businesses/:id/usage
+  @Get(':id/usage')
+  @ApiOperation({ summary: 'Estado de uso del plan para esta empresa' })
+  getUsage(
+    @CurrentUser() user: { id: string },
+    @Param('id') businessId: string,
+  ) {
+    return this.planService.getUsage(user.id, businessId);
   }
 
   // POST /api/v1/businesses/:id/biz-transactions/bulk
