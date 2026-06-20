@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BusinessesService } from '../businesses/businesses.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 
 @Injectable()
@@ -8,10 +9,12 @@ export class SuppliersService {
   constructor(
     private prisma: PrismaService,
     private businessesService: BusinessesService,
+    private planService: PlanService,
   ) {}
 
   async create(userId: string, businessId: string, dto: CreateSupplierDto) {
     await this.businessesService.findOne(userId, businessId);
+    await this.planService.assertCanCreateSupplier(userId, businessId);
     return this.prisma.supplier.create({
       data: { businessId, ...dto },
     });

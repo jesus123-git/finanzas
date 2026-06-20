@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BusinessesService } from '../businesses/businesses.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
@@ -9,10 +10,12 @@ export class ProductsService {
   constructor(
     private prisma: PrismaService,
     private businessesService: BusinessesService,
+    private planService: PlanService,
   ) {}
 
   async create(userId: string, businessId: string, dto: CreateProductDto) {
     await this.businessesService.findOne(userId, businessId);
+    await this.planService.assertCanCreateProduct(userId, businessId);
 
     return this.prisma.product.create({
       data: {

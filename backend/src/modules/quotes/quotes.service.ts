@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BusinessesService } from '../businesses/businesses.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class QuotesService {
   constructor(
     private prisma: PrismaService,
     private businessesService: BusinessesService,
+    private planService: PlanService,
   ) {}
 
   // ─── Generar número de cotización (CT-0001) ───────────────────────────────────
@@ -21,6 +23,7 @@ export class QuotesService {
 
   async create(userId: string, businessId: string, dto: CreateQuoteDto) {
     await this.businessesService.findOne(userId, businessId);
+    await this.planService.assertCanCreateQuotation(userId, businessId);
 
     const subtotal = dto.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
     const tax = dto.items.reduce((s, i) => s + i.quantity * i.unitPrice * i.taxRate / 100, 0);

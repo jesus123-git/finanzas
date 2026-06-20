@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BusinessesService } from '../businesses/businesses.service';
+import { PlanService } from '../plan/plan.service';
 import { CreatePriceListDto } from './dto/create-price-list.dto';
 
 @Injectable()
@@ -8,12 +9,14 @@ export class PriceListsService {
   constructor(
     private prisma: PrismaService,
     private businessesService: BusinessesService,
+    private planService: PlanService,
   ) {}
 
   // ─── Activar/desactivar listas de precios para una empresa ───────────────────
 
   async togglePriceLists(userId: string, businessId: string, enabled: boolean) {
     await this.businessesService.findOne(userId, businessId);
+    if (enabled) await this.planService.assertCanUsePriceLists(userId);
     return this.prisma.business.update({
       where: { id: businessId },
       data: { usePriceLists: enabled },
@@ -25,6 +28,7 @@ export class PriceListsService {
 
   async create(userId: string, businessId: string, dto: CreatePriceListDto) {
     await this.businessesService.findOne(userId, businessId);
+    await this.planService.assertCanUsePriceLists(userId);
 
     // Si es default, quita el default de las demás
     if (dto.isDefault) {

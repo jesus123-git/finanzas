@@ -1,16 +1,21 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { PlanService } from '../plan/plan.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BulkImportBizDto } from './dto/bulk-import-biz.dto';
 
 @Injectable()
 export class BusinessesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private planService: PlanService,
+  ) {}
 
   // ─── Crear empresa ────────────────────────────────────────────────────────────
 
   async create(userId: string, dto: CreateBusinessDto) {
+    await this.planService.assertCanCreateBusiness(userId);
     return this.prisma.business.create({
       data: {
         ...dto,
