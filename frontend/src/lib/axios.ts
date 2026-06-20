@@ -11,6 +11,7 @@
 import axios from 'axios';
 import { getToken, removeToken } from './api';
 import { removeSessionCookie } from './cookies';
+import { upgradeModalBus } from './upgradeModalBus';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL
@@ -33,7 +34,13 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// ─── Response interceptor: manejar 401 ───────────────────────────────────────
+const UPGRADE_ERRORS = new Set([
+  'INVOICE_LIMIT_REACHED', 'CLIENT_LIMIT_REACHED', 'PRODUCT_LIMIT_REACHED',
+  'QUOTE_LIMIT_REACHED',   'SUPPLIER_LIMIT_REACHED', 'BUSINESS_LIMIT_REACHED',
+  'MEMBER_LIMIT_REACHED',  'FEATURE_NOT_AVAILABLE',
+]);
+
+// ─── Response interceptor: manejar 401 y límites de plan ─────────────────────
 api.interceptors.response.use(
   response => response,
   error => {
@@ -43,6 +50,10 @@ api.interceptors.response.use(
       removeToken();
       removeSessionCookie();
       window.location.href = '/login';
+    }
+    const code: string = error.response?.data?.message ?? '';
+    if (UPGRADE_ERRORS.has(code)) {
+      upgradeModalBus.emit(code);
     }
     return Promise.reject(error);
   },
