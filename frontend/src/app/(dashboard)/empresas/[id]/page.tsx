@@ -10,6 +10,7 @@ import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
 import { UserMenu } from '@/components/ui/UserMenu';
 import { Logo } from '@/components/ui/Logo';
 import { ExcelImportWizard } from '@/components/excel/ExcelImportWizard';
+import { UsageCard } from '@/components/ui/UsageCard';
 import { formatCurrency } from '@/lib/utils';
 import {
   TrendingUp, TrendingDown, DollarSign, Clock,
@@ -21,7 +22,7 @@ import {
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface Business {
-  id: string; name: string; nit?: string; taxRegime?: string;
+  id: string; name: string; nit?: string; taxRegime?: string; currency?: string;
 }
 
 interface KPIs {
@@ -95,10 +96,11 @@ const getNavItems = (id: string): NavItem[] => [
 
 // ─── KPI card ─────────────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, icon: Icon, iconBg, iconCl, loading }: {
+function KpiCard({ label, value, icon: Icon, iconBg, iconCl, loading, currency = 'COP' }: {
   label: string; value: number; loading: boolean;
   icon: LucideIcon;
   iconBg: string; iconCl: string;
+  currency?: string;
 }) {
   if (loading) {
     return (
@@ -117,7 +119,7 @@ function KpiCard({ label, value, icon: Icon, iconBg, iconCl, loading }: {
         <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
       </div>
       <p className={`text-2xl font-bold ${iconCl}`}>
-        {formatCurrency(value, 'COP')}
+        {formatCurrency(value, currency)}
       </p>
     </div>
   );
@@ -214,10 +216,10 @@ export default function BusinessDashboardPage() {
 
         {/* KPIs del mes */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard label="Ingresos del mes"   value={kpis?.currentMonth.income ?? 0}       icon={TrendingUp}   iconBg="bg-emerald-100 dark:bg-emerald-800/40" iconCl="text-emerald-600 dark:text-emerald-400" loading={loading} />
-          <KpiCard label="Gastos del mes"      value={kpis?.currentMonth.expenses ?? 0}     icon={TrendingDown} iconBg="bg-rose-100 dark:bg-rose-800/40"     iconCl="text-rose-600 dark:text-rose-400"     loading={loading} />
-          <KpiCard label="Utilidad neta"       value={kpis?.currentMonth.profit ?? 0}       icon={DollarSign}   iconBg="bg-violet-100 dark:bg-violet-800/40" iconCl="text-violet-600 dark:text-violet-400" loading={loading} />
-          <KpiCard label="Cobros pendientes"   value={kpis?.pendingCollection.total ?? 0}   icon={Clock}        iconBg="bg-amber-100 dark:bg-amber-800/40"   iconCl="text-amber-600 dark:text-amber-400"   loading={loading} />
+          <KpiCard label="Ingresos del mes"   value={kpis?.currentMonth.income ?? 0}       icon={TrendingUp}   iconBg="bg-emerald-100 dark:bg-emerald-800/40" iconCl="text-emerald-600 dark:text-emerald-400" loading={loading} currency={business?.currency} />
+          <KpiCard label="Gastos del mes"      value={kpis?.currentMonth.expenses ?? 0}     icon={TrendingDown} iconBg="bg-rose-100 dark:bg-rose-800/40"     iconCl="text-rose-600 dark:text-rose-400"     loading={loading} currency={business?.currency} />
+          <KpiCard label="Utilidad neta"       value={kpis?.currentMonth.profit ?? 0}       icon={DollarSign}   iconBg="bg-violet-100 dark:bg-violet-800/40" iconCl="text-violet-600 dark:text-violet-400" loading={loading} currency={business?.currency} />
+          <KpiCard label="Cobros pendientes"   value={kpis?.pendingCollection.total ?? 0}   icon={Clock}        iconBg="bg-amber-100 dark:bg-amber-800/40"   iconCl="text-amber-600 dark:text-amber-400"   loading={loading} currency={business?.currency} />
         </div>
 
         {/* Grid de módulos */}
@@ -240,6 +242,8 @@ export default function BusinessDashboardPage() {
             })}
           </div>
         </div>
+
+        <UsageCard />
 
       </main>
 

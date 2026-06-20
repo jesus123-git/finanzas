@@ -8,6 +8,8 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import { ArrowLeft, Plus, X, Tag, Star, Users, ChevronDown, ChevronUp, Edit2, Trash2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { PlanGate } from '@/components/ui/PlanGate';
 
 interface Product { id: string; name: string; price: number; unit: string; sku?: string }
 interface PriceListItem { productId: string; price: number; product: Product }
@@ -30,6 +32,7 @@ export default function PriceListsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [editingPrices, setEditingPrices] = useState<Record<string, string>>({});
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   // ─── Queries ────────────────────────────────────────────────────────────────
   const { data: business } = useQuery({
@@ -77,7 +80,10 @@ export default function PriceListsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (plId: string) => api.delete(`/businesses/${businessId}/price-lists/${plId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['price-lists', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['price-lists', businessId] });
+      setConfirmDelete(null);
+    },
   });
 
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<{ name: string; isDefault: boolean }>({
@@ -119,6 +125,11 @@ export default function PriceListsPage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+        <PlanGate
+          requiredPlan="PRO"
+          featureName="Listas de precios — Nomi PRO"
+          featureDescription="Crea precios diferenciados por tipo de cliente: mayorista, minorista, VIP. Disponible en Nomi PRO y Nomi Empresa."
+        >
         {/* Toggle activar/desactivar */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 flex items-center justify-between">
           <div>
@@ -182,6 +193,15 @@ export default function PriceListsPage() {
               </div>
             )}
 
+            {/* Confirmación de eliminación */}
+            <ConfirmDialog
+              open={!!confirmDelete}
+              title="Eliminar lista de precios"
+              message={`¿Eliminar la lista "${confirmDelete?.name}"? Los precios especiales de esta lista se perderán.`}
+              onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+              onCancel={() => setConfirmDelete(null)}
+            />
+
             {/* Lista de price lists */}
             {isLoading ? (
               <div className="space-y-3">
@@ -219,9 +239,7 @@ export default function PriceListsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => {
-                            if (confirm(`¿Eliminar la lista "${pl.name}"?`)) deleteMutation.mutate(pl.id);
-                          }}
+                          onClick={() => setConfirmDelete({ id: pl.id, name: pl.name })}
                           className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                         >
                           <Trash2 size={15} />
@@ -288,6 +306,7 @@ export default function PriceListsPage() {
             )}
           </>
         )}
+        </PlanGate>
       </main>
     </div>
   );
