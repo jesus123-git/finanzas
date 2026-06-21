@@ -1,3 +1,4 @@
+import { getCurrency } from './currencies';
 // Utilidad para combinar clases de Tailwind de forma condicional.
 // Es una versión minimal de `clsx` + `tailwind-merge` sin dependencias extra.
 // Uso: cn('base-class', condition && 'conditional-class', 'otra-clase')
@@ -7,11 +8,12 @@ export function cn(...classes: (string | false | null | undefined)[]): string {
 
 // Formatea un número como moneda colombiana
 export function formatCurrency(amount: number, currency = 'COP'): string {
-  return new Intl.NumberFormat('es-CO', {
+  const meta = getCurrency(currency);
+  return new Intl.NumberFormat(meta.locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: meta.decimals,
+    maximumFractionDigits: meta.decimals,
   }).format(amount);
 }
 
