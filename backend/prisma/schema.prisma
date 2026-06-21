@@ -89,6 +89,10 @@ model User {
   plan          PlanType  @default(FREE)
   planExpiresAt DateTime?
   planStartedAt DateTime?
+  isStaff            Boolean   @default(false)
+  planGrantedByAdmin Boolean   @default(false)
+  planHistory        PlanHistory[] @relation("UserPlanHistory")
+  adminChanges       PlanHistory[] @relation("AdminChanges")
 
   // Módulo personal
   bankAccounts BankAccount[]
@@ -540,4 +544,23 @@ model BusinessInvite {
   @@unique([businessId, email])
   @@index([businessId])
   @@map("business_invites")
+}
+
+// ─── Admin: Historial de cambios de plan ─────────────────────────────────────
+
+model PlanHistory {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation("UserPlanHistory", fields: [userId], references: [id], onDelete: Cascade)
+  fromPlan       PlanType
+  toPlan         PlanType
+  changedById    String?
+  changedBy      User?     @relation("AdminChanges", fields: [changedById], references: [id], onDelete: SetNull)
+  grantedByAdmin Boolean   @default(false)
+  note           String?
+  createdAt      DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("plan_history")
 }
