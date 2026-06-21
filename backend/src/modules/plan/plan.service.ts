@@ -32,16 +32,19 @@ export class PlanService {
     return d;
   }
 
-  private async getUserPlan(userId: string) {
+  private async getUserPlan(userId: string): Promise<{ plan: import('@prisma/client').PlanType; isStaff: boolean }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { plan: true },
+      select: { plan: true, isStaff: true },
     });
     if (!user) throw new NotFoundException('Usuario no encontrado');
-    return user.plan;
+    return { plan: user.plan, isStaff: user.isStaff };
   }
 
   async assertBusinessAccess(userId: string, businessId: string): Promise<void> {
+    const { isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
+
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
       select: { userId: true },
@@ -56,6 +59,9 @@ export class PlanService {
   }
 
   async assertWriteAccess(userId: string, businessId: string): Promise<void> {
+    const { isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
+
     const business = await this.prisma.business.findUnique({
       where: { id: businessId },
       select: { userId: true },
@@ -71,7 +77,8 @@ export class PlanService {
   }
 
   async assertCanCreateInvoice(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].invoices;
     if (limit === null) return;
     const count = await this.prisma.invoice.count({
@@ -81,7 +88,8 @@ export class PlanService {
   }
 
   async assertCanCreateCustomer(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].customers;
     if (limit === null) return;
     const count = await this.prisma.customer.count({ where: { businessId } });
@@ -89,7 +97,8 @@ export class PlanService {
   }
 
   async assertCanCreateProduct(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].products;
     if (limit === null) return;
     const count = await this.prisma.product.count({ where: { businessId, isActive: true } });
@@ -97,7 +106,8 @@ export class PlanService {
   }
 
   async assertCanCreateQuotation(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].quotes;
     if (limit === null) return;
     const count = await this.prisma.quote.count({
@@ -107,7 +117,8 @@ export class PlanService {
   }
 
   async assertCanCreateSupplier(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].suppliers;
     if (limit === null) return;
     const count = await this.prisma.supplier.count({ where: { businessId, isActive: true } });
@@ -115,7 +126,8 @@ export class PlanService {
   }
 
   async assertCanCreateBusiness(userId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].businesses;
     if (limit === null) return;
     const count = await this.prisma.business.count({ where: { userId, isActive: true } });
@@ -123,12 +135,14 @@ export class PlanService {
   }
 
   async assertCanUsePriceLists(userId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     if (plan === 'FREE') throw new ForbiddenException('FEATURE_NOT_AVAILABLE');
   }
 
   async assertCanAddMember(userId: string, businessId: string): Promise<void> {
-    const plan = await this.getUserPlan(userId);
+    const { plan, isStaff } = await this.getUserPlan(userId);
+    if (isStaff) return;
     const limit = LIMITS[plan].members;
     if (limit === null) return;
     if (limit === 0) throw new ForbiddenException('MEMBER_LIMIT_REACHED');
