@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User, Settings, Lock, HelpCircle, LogOut,
-  X, Check, Eye, EyeOff, Loader2, Sparkles,
+  X, Check, Eye, EyeOff, Loader2, Sparkles, Shield,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth.context';
 import { apiPatch } from '@/lib/api';
@@ -194,6 +194,12 @@ export function UserMenu() {
   const displayName = user?.name ?? user?.email ?? 'Usuario';
 
   const menuItems = [
+    ...(user?.isStaff ? [{
+      icon: Shield,
+      label: 'Administración',
+      desc: 'Panel de admin',
+      action: () => { setOpen(false); router.push('/admin'); },
+    }] : []),
     {
       icon: User,
       label: 'Mi perfil',
