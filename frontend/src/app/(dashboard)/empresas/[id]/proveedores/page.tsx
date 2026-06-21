@@ -8,6 +8,7 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import { ArrowLeft, Plus, X, Truck, Pencil, Trash2, Phone, Mail, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Supplier {
   id: string; name: string; nit?: string; email?: string; phone?: string;
@@ -27,6 +28,7 @@ export default function SuppliersPage() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const { data: suppliers, isLoading } = useQuery({
     queryKey: ['suppliers', businessId],
@@ -56,7 +58,10 @@ export default function SuppliersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/businesses/${businessId}/suppliers/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers', businessId] });
+      setConfirmDelete(null);
+    },
   });
 
   return (
@@ -137,6 +142,16 @@ export default function SuppliersPage() {
           </div>
         )}
 
+        {/* Confirmación de eliminación */}
+        <ConfirmDialog
+          open={!!confirmDelete}
+          title="Desactivar proveedor"
+          message={`¿Desactivar a "${confirmDelete?.name}"? Las órdenes de compra existentes se conservarán.`}
+          confirmLabel="Desactivar"
+          onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+
         {/* Lista */}
         {isLoading ? (
           <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 animate-pulse h-20" />)}</div>
@@ -185,7 +200,7 @@ export default function SuppliersPage() {
                     <button onClick={() => openEdit(s)} className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition">
                       <Pencil size={16} />
                     </button>
-                    <button onClick={() => { if (confirm('¿Desactivar este proveedor?')) deleteMutation.mutate(s.id); }} className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition">
+                    <button onClick={() => setConfirmDelete({ id: s.id, name: s.name })} className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition">
                       <Trash2 size={16} />
                     </button>
                   </div>

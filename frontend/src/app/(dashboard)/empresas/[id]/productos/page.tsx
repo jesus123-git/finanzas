@@ -10,6 +10,8 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import { ArrowLeft, Plus, X, Package, Wrench, AlertTriangle, Edit2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { MoneyInput } from '@/components/ui/MoneyInput';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +73,14 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [filterType, setFilterType] = useState<'ALL' | 'PRODUCT' | 'SERVICE'>('ALL');
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+
+  const { data: business } = useQuery({
+    queryKey: ['business', businessId],
+    queryFn: async () => (await api.get<{ currency?: string }>(`/businesses/${businessId}`)).data,
+    enabled: !!businessId,
+  });
+  const currency = business?.currency ?? 'COP';
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', businessId, filterType],
@@ -143,7 +153,10 @@ export default function ProductsPage() {
   const deleteMutation = useMutation({
     mutationFn: (productId: string) =>
       api.delete(`/businesses/${businessId}/products/${productId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', businessId] });
+      setConfirmDelete(null);
+    },
   });
 
   const onSubmit = (data: FormData) => {
@@ -267,13 +280,21 @@ export default function ProductsPage() {
                 {/* Precio + Costo */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelCls}>Precio de venta (COP) <span className="text-red-500">*</span></label>
-                    <input {...register('price')} type="number" min="0" placeholder="0" className={inputCls} />
+                    <label className={labelCls}>Precio de venta ({currency}) <span className="text-red-500">*</span></label>
+                    <MoneyInput
+                      value={watch('price')}
+                      onChange={n => setValue('price', n, { shouldValidate: true })}
+                      className={inputCls}
+                    />
                     {errors.price && <p className="mt-1 text-sm text-red-500">{errors.price.message}</p>}
                   </div>
                   <div>
-                    <label className={labelCls}>Costo (COP)</label>
-                    <input {...register('cost')} type="number" min="0" placeholder="0" className={inputCls} />
+                    <label className={labelCls}>Costo ({currency})</label>
+                    <MoneyInput
+                      value={watch('cost')}
+                      onChange={n => setValue('cost', n, { shouldValidate: true })}
+                      className={inputCls}
+                    />
                   </div>
                 </div>
 
@@ -347,6 +368,16 @@ export default function ProductsPage() {
             </div>
           </div>
         )}
+
+        {/* Confirmación de eliminación */}
+        <ConfirmDialog
+          open={!!confirmDelete}
+          title="Desactivar producto"
+          message={`¿Desactivar "${confirmDelete?.name}"? Dejará de aparecer en el catálogo pero el historial se conserva.`}
+          confirmLabel="Desactivar"
+          onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
 
         {/* Lista */}
         {isLoading ? (
@@ -433,11 +464,7 @@ export default function ProductsPage() {
                     <Edit2 size={16} />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`¿Desactivar "${product.name}"?`)) {
-                        deleteMutation.mutate(product.id);
-                      }
-                    }}
+                    onClick={() => setConfirmDelete({ id: product.id, name: product.name })}
                     className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                   >
                     <X size={16} />

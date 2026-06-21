@@ -10,6 +10,7 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import { ArrowLeft, Plus, X, FileText, Trash2, ArrowRight, CheckCircle } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ export default function QuotesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'delete' | 'convert'; id: string; number: string } | null>(null);
 
   const { data: quotes, isLoading } = useQuery({
     queryKey: ['quotes', businessId],
@@ -133,16 +135,20 @@ export default function QuotesPage() {
   const convertMutation = useMutation({
     mutationFn: (quoteId: string) =>
       api.post(`/businesses/${businessId}/quotes/${quoteId}/convert`, {}),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes', businessId] });
       queryClient.invalidateQueries({ queryKey: ['invoices', businessId] });
-      router.push(`/empresas/${businessId}/invoices`);
+      setConfirmAction(null);
+      router.push(`/empresas/${businessId}/facturas`);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (quoteId: string) => api.delete(`/businesses/${businessId}/quotes/${quoteId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes', businessId] });
+      setConfirmAction(null);
+    },
   });
 
   return (
@@ -276,6 +282,23 @@ export default function QuotesPage() {
           </div>
         )}
 
+        {/* Confirmaciones */}
+        <ConfirmDialog
+          open={confirmAction?.type === 'delete'}
+          title="Eliminar cotización"
+          message={`¿Eliminar la cotización ${confirmAction?.number}? Esta acción no se puede deshacer.`}
+          onConfirm={() => confirmAction && deleteMutation.mutate(confirmAction.id)}
+          onCancel={() => setConfirmAction(null)}
+        />
+        <ConfirmDialog
+          open={confirmAction?.type === 'convert'}
+          title="Convertir en factura"
+          message={`¿Convertir la cotización ${confirmAction?.number} en factura? Se generará automáticamente con numeración FV.`}
+          confirmLabel="Convertir"
+          onConfirm={() => confirmAction && convertMutation.mutate(confirmAction.id)}
+          onCancel={() => setConfirmAction(null)}
+        />
+
         {/* Lista */}
         {isLoading ? (
           <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 animate-pulse h-24" />)}</div>
@@ -337,11 +360,7 @@ export default function QuotesPage() {
                         )}
                         {quote.status === 'ACCEPTED' && (
                           <button
-                            onClick={() => {
-                              if (confirm('¿Convertir esta cotización en factura?')) {
-                                convertMutation.mutate(quote.id);
-                              }
-                            }}
+                            onClick={() => setConfirmAction({ type: 'convert', id: quote.id, number: quote.number })}
                             className="flex items-center gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition font-medium"
                           >
                             <CheckCircle size={13} /> Convertir en factura
@@ -349,7 +368,7 @@ export default function QuotesPage() {
                         )}
                         {quote.status !== 'INVOICED' && (
                           <button
-                            onClick={() => { if (confirm('¿Eliminar esta cotización?')) deleteMutation.mutate(quote.id); }}
+                            onClick={() => setConfirmAction({ type: 'delete', id: quote.id, number: quote.number })}
                             className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400 mt-1"
                           >
                             Eliminar

@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { WorkspaceSwitcher } from '@/components/ui/WorkspaceSwitcher';
 import { UserMenu } from '@/components/ui/UserMenu';
 import { Logo } from '@/components/ui/Logo';
+import { currencyOptions } from '@/lib/currencies';
 import { Building2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
@@ -21,6 +22,7 @@ interface Business {
   nit?: string;
   legalName?: string;
   taxRegime?: string;
+  currency?: string;
   isActive: boolean;
   createdAt: string;
   _count?: { customers: number; invoices: number; bizTransactions: number };
@@ -37,7 +39,7 @@ export default function EmpresasPage() {
   const [loading, setLoading]       = useState(true);
   const [creating, setCreating]     = useState(false);
   const [showForm, setShowForm]     = useState(false);
-  const [formData, setFormData]     = useState({ name: '', nit: '', taxRegime: 'SIMPLE' });
+  const [formData, setFormData]     = useState({ name: '', nit: '', taxRegime: 'SIMPLE', currency: 'COP' });
 
   // Cargar empresas del usuario
   useEffect(() => {
@@ -58,13 +60,14 @@ export default function EmpresasPage() {
       const payload = {
         name: formData.name.trim(),
         taxRegime: formData.taxRegime,
+        currency: formData.currency,
         ...(formData.nit.trim() && { nit: formData.nit.trim() }),
       };
       const biz = await apiPost<Business>('/businesses', payload);
       toast(`Empresa "${biz.name}" creada 🎉`, 'success');
       setBusinesses(prev => [biz, ...prev]);
       setShowForm(false);
-      setFormData({ name: '', nit: '', taxRegime: 'SIMPLE' });
+      setFormData({ name: '', nit: '', taxRegime: 'SIMPLE', currency: 'COP' });
       // Navegar al dashboard de la empresa recién creada
       router.push(`/empresas/${biz.id}`);
     } catch {
@@ -165,6 +168,21 @@ export default function EmpresasPage() {
                     <option value="SIMPLE">Simple (SIMPLE)</option>
                     <option value="ORDINARIO">Ordinario (ORDINARIO)</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Moneda de operación</label>
+                  <select
+                    value={formData.currency}
+                    onChange={e => setFormData(p => ({ ...p, currency: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    {currencyOptions.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    Todos los precios, facturas y reportes de esta empresa usarán esta moneda.
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 pt-1">

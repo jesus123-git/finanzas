@@ -8,8 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { api } from '@/lib/axios';
 import Link from 'next/link';
-import { ArrowLeft, Plus, X, Users, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Plus, X, Users, Mail, Phone, Trash2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const schema = z.object({
   name: z.string().min(2, 'Mínimo 2 caracteres'),
@@ -39,6 +40,7 @@ export default function CustomersPage() {
   const { id: businessId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ['customers', businessId],
@@ -57,6 +59,14 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ['business', businessId] });
       reset();
       setShowForm(false);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/businesses/${businessId}/customers/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers', businessId] });
+      setConfirmDelete(null);
     },
   });
 
@@ -146,6 +156,15 @@ export default function CustomersPage() {
           </div>
         )}
 
+        {/* Confirmación de eliminación */}
+        <ConfirmDialog
+          open={!!confirmDelete}
+          title="Eliminar cliente"
+          message={`¿Eliminar a "${confirmDelete?.name}"? Se eliminará del directorio pero las facturas existentes se conservarán.`}
+          onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+
         {/* Lista de clientes */}
         {isLoading ? (
           <div className="space-y-3">
@@ -163,7 +182,7 @@ export default function CustomersPage() {
         ) : (
           <div className="space-y-3">
             {customers?.map((customer) => (
-              <div key={customer.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 flex items-center justify-between">
+              <div key={customer.id} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 flex items-center justify-between group">
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">{customer.name}</h3>
                   <div className="flex items-center gap-4 mt-1">
@@ -181,6 +200,12 @@ export default function CustomersPage() {
                   </div>
                   {customer.notes && <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 italic">{customer.notes}</p>}
                 </div>
+                <button
+                  onClick={() => setConfirmDelete({ id: customer.id, name: customer.name })}
+                  className="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition opacity-0 group-hover:opacity-100"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           </div>

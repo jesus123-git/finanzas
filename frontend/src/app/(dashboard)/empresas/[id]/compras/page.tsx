@@ -8,6 +8,7 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import { ArrowLeft, Plus, X, ShoppingCart, Trash2, CheckCircle2, Banknote } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Supplier { id: string; name: string }
 interface Product { id: string; name: string; price: number; taxRate: number }
@@ -44,6 +45,7 @@ export default function PurchasesPage() {
   const { id: businessId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; number: string } | null>(null);
 
   const { data: purchases, isLoading } = useQuery({
     queryKey: ['purchases', businessId],
@@ -95,7 +97,10 @@ export default function PurchasesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/businesses/${businessId}/purchases/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['purchases', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases', businessId] });
+      setConfirmDelete(null);
+    },
   });
 
   return (
@@ -218,6 +223,15 @@ export default function PurchasesPage() {
           </div>
         )}
 
+        {/* Confirmación de eliminación */}
+        <ConfirmDialog
+          open={!!confirmDelete}
+          title="Eliminar orden de compra"
+          message={`¿Eliminar la orden ${confirmDelete?.number}? Esta acción no se puede deshacer.`}
+          onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+
         {/* Lista */}
         {isLoading ? (
           <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 animate-pulse h-24" />)}</div>
@@ -269,7 +283,7 @@ export default function PurchasesPage() {
                             <button onClick={() => statusMutation.mutate({ purchaseId: p.id, status: 'CANCELLED' })} className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400">
                               Cancelar
                             </button>
-                            <button onClick={() => { if (confirm('¿Eliminar esta orden?')) deleteMutation.mutate(p.id); }} className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400">
+                            <button onClick={() => setConfirmDelete({ id: p.id, number: p.number })} className="text-xs text-gray-400 hover:text-red-500 dark:hover:text-red-400">
                               Eliminar
                             </button>
                           </>
