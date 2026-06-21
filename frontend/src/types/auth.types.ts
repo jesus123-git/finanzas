@@ -5,6 +5,7 @@ export interface User {
   email: string;
   name: string | null;
   plan: 'FREE' | 'PRO' | 'EMPRESA';
+  isStaff: boolean;
 }
 
 // ─── Payloads de peticiones ───────────────────────────────────────────────────
