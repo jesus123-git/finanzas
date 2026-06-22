@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth.context';
+import { GoogleSignInButton } from '@/components/ui/GoogleSignInButton';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { LogoMark } from '@/components/ui/Logo';
@@ -103,7 +104,18 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="relative my-6">
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
+              <span className="bg-white dark:bg-slate-800 px-3">o</span>
+            </div>
+          </div>
+
+          <GoogleSignInButton text="signin_with" />
+
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200 dark:border-slate-700" />
             </div>
